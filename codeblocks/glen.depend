@@ -1,0 +1,57 @@
+# depslib dependency file v1.0
+1352227295 source:c:\users\gurido\documents\git\glen\src\main.cpp
+	"Geometry.h"
+	"Log.h"
+	"Tokenizer.h"
+
+1352233430 c:\users\gurido\documents\git\glen\src\geometry.h
+	"Types.h"
+	<vector>
+	<cassert>
+	<string>
+
+1352227065 c:\users\gurido\documents\git\glen\src\types.h
+	<glm/glm.hpp>
+	<glm/gtc/quaternion.hpp>
+	<glm/gtc/type_ptr.hpp>
+	<glm/gtc/matrix_transform.hpp>
+	<glm/gtx/euler_angles.hpp>
+	<glm/gtx/random.hpp>
+	<omp.h>
+
+1351872363 c:\users\gurido\documents\git\glen\src\error.h
+	<string>
+	<iostream>
+
+1352222233 c:\users\gurido\documents\git\glen\src\log.h
+	<windows.h>
+	<cstdlib>
+	<cstdio>
+
+1352220080 source:c:\users\gurido\documents\git\glen\src\log.cpp
+	"Log.h"
+
+1352233551 source:c:\users\gurido\documents\git\glen\src\geometry.cpp
+	"Geometry.h"
+
+1352226551 source:c:\users\gurido\documents\git\glen\src\tokenizer.cpp
+	"Tokenizer.h"
+
+1352226519 c:\users\gurido\documents\git\glen\src\tokenizer.h
+	<vector>
+	<iostream>
+	<string>
+
+1352232941 source:c:\users\gurido\documents\git\glen\src\objloader.cpp
+	<iostream>
+	<string>
+	<cstdio>
+	<cassert>
+	<fstream>
+	"ObjLoader.h"
+
+1352229571 c:\users\gurido\documents\git\glen\src\objloader.h
+	<vector>
+	"Geometry.h"
+	"Tokenizer.h"
+

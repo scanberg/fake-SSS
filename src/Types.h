@@ -18,7 +18,6 @@
 #define PI 3.1415926536f
 #endif
 
-
 using glm::vec2;
 using glm::vec3;
 using glm::vec4;
@@ -35,7 +34,6 @@ using glm::mat3;
 using glm::mat4;
 
 using glm::quat;
-
 
 typedef unsigned char 	        u8;
 typedef unsigned short 	        u16;
