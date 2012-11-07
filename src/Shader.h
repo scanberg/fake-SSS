@@ -17,17 +17,15 @@ protected:
 
 	bool compiled;
 
-	bool createShader( const char *filename );
-
 public:
 	Shader();
-	Shader( const std::string &filename );
+	Shader( const char *vertexFile, const char *fragmentFile );
 	~Shader();
 
-	GLint getAttributeLocation(const std::string &att);
-	GLint getUniformLocation(const std::string &uni);
+    void init(const char *vertexFile, const char *fragmentFile);
 
-	void init(const std::string &filename);
+	GLint getAttributeLocation(const char *att);
+	GLint getUniformLocation(const char *uni);
 
 	bool isCompiled() { return compiled; }
 

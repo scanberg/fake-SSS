@@ -37,7 +37,7 @@ void Logger::_warning(const char* func, int line, const char* msg)
     printf(" in function '%s' at line %i: %s \n", func, line, msg);
 }
 
-void Logger::_note(const char* msg)
+void Logger::_note(const char* msg, ...)
 {
     #ifdef WIN32
     SetConsoleTextAttribute(hConsole, COLOR_NOTE);
@@ -49,5 +49,8 @@ void Logger::_note(const char* msg)
     SetConsoleTextAttribute(hConsole, COLOR_DEFAULT);
     #endif
 
+    va_list ap;
+    va_start(ap, msg);
     printf(" %s \n", msg);
+    va_end(ap);
 }

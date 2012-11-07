@@ -37,6 +37,8 @@
 		<Unit filename="..\src\Log.h" />
 		<Unit filename="..\src\ObjLoader.cpp" />
 		<Unit filename="..\src\ObjLoader.h" />
+		<Unit filename="..\src\Shader.cpp" />
+		<Unit filename="..\src\Shader.h" />
 		<Unit filename="..\src\Tokenizer.cpp" />
 		<Unit filename="..\src\Tokenizer.h" />
 		<Unit filename="..\src\Types.h" />

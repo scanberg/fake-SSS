@@ -7,17 +7,18 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <cstdarg>
 
 #define logError(m) Logger::_error(__FUNCTION__, __LINE__, m)
 #define logWarning(m) Logger::_warning(__FUNCTION__, __LINE__, m)
-#define logNote(m) Logger::_note(m)
+#define logNote Logger::_note
 
 class Logger
 {
 public:
     static void _warning(const char* func, int line, const char* msg);
     static void _error(const char* func, int line, const char* msg);
-    static void _note(const char* msg);
+    static void _note(const char* msg,...);
 
 private:
     static HANDLE hConsole;

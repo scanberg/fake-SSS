@@ -9,6 +9,11 @@
 #define toFloat(x) atof(x.c_str())
 #define toInt(x) atoi(x.c_str())
 
+typedef struct
+{
+    u32 vertexIndex, texCoordIndex, normalIndex;
+}sStoredVertex;
+
 // Helper function to retrive the indices in a face chunk
 void getIndices(const std::string &str, int &v, int &t, int &n)
 {
@@ -134,9 +139,9 @@ int loadObj( std::vector<Geometry> &geomList, const std::string &filename, float
                 if(tempSG > (i32)vertexUsed[vdata[i]].size()-1)
                     vertexUsed[vdata[i]].resize(tempSG+1,-1);
 
-                /*if(vertexUsed[vdata[i]][tempSG] > -1)
+                if(vertexUsed[vdata[i]][tempSG] > -1)
                     fdata[i] = vertexUsed[vdata[i]][tempSG];
-                else*/
+                else
                 {
                     vertexUsed[vdata[i]][tempSG] = (int)g.vertices.size();
 
