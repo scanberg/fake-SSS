@@ -23,12 +23,13 @@
 	<string>
 	<iostream>
 
-1352222233 c:\users\gurido\documents\git\glen\src\log.h
+1352320114 c:\users\gurido\documents\git\glen\src\log.h
 	<windows.h>
 	<cstdlib>
 	<cstdio>
+	<cstdarg>
 
-1352220080 source:c:\users\gurido\documents\git\glen\src\log.cpp
+1352320114 source:c:\users\gurido\documents\git\glen\src\log.cpp
 	"Log.h"
 
 1352233551 source:c:\users\gurido\documents\git\glen\src\geometry.cpp
@@ -42,7 +43,7 @@
 	<iostream>
 	<string>
 
-1352232941 source:c:\users\gurido\documents\git\glen\src\objloader.cpp
+1352320114 source:c:\users\gurido\documents\git\glen\src\objloader.cpp
 	<iostream>
 	<string>
 	<cstdio>
@@ -107,4 +108,17 @@
 
 1352269900 source:c:\users\gaspachelor\documents\git\glen\src\geometry.cpp
 	"Geometry.h"
+
+1352321066 source:c:\users\gurido\documents\git\glen\src\shader.cpp
+	<fstream>
+	<cstdio>
+	<string>
+	"Shader.h"
+	"Log.h"
+
+1352320114 c:\users\gurido\documents\git\glen\src\shader.h
+	<iostream>
+	<map>
+	<GL/glew.h>
+	<GL/glfw.h>
 

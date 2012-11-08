@@ -138,18 +138,18 @@ void Shader::init(const char *vertexFile, const char *fragmentFile) {
 
     GLint isLinked;
 
-    glGetProgramiv(program, GL_LINK_STATUS, (GLint *)&isLinked);
+    glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
     if(isLinked==GL_FALSE)
     {
         logError("Failed to link shader");
 
-        GLint maxLength;
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-        if(maxLength>0)
+        GLsizei length;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+        if(length>0)
         {
-            char linkInfoLog[maxLength];
-            glGetProgramInfoLog(program, maxLength, &maxLength, &linkInfoLog);
-            std::cout << linkInfoLog << std::endl;
+            char buffer[BUFFER_SIZE];
+            glGetProgramInfoLog(program, BUFFER_SIZE, &length, buffer);
+            logNote(buffer);
         }
 
         glDetachShader(program, vertexShader);

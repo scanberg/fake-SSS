@@ -31,6 +31,9 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Linker>
+			<Add library="glew32" />
+		</Linker>
 		<Unit filename="..\src\Geometry.cpp" />
 		<Unit filename="..\src\Geometry.h" />
 		<Unit filename="..\src\Log.cpp" />
