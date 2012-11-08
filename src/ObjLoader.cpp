@@ -126,10 +126,7 @@ int loadObj( std::vector<Geometry> &geomList, const std::string &filename, float
         }
         else if(param == "f")
         {
-            //Profiler.StartTimer("Face");
             ivec4 vdata(-1), vtdata(-1), ndata(-1), fdata(-1);
-
-            //printf("tokensize! %i \n",token.size());
 
             for(u8 i=0; i<token.size()-1; ++i)
             {
@@ -243,11 +240,6 @@ int loadObj( std::vector<Geometry> &geomList, const std::string &filename, float
     geomList.push_back(g);
 
     std::cout<<"done reading "<<filename<<std::endl;
-
-    //printf("geometric facecount = %i \n",g.face.size());
-
-    //Profiler.StopTimer("OBJ Total");
-    //Profiler.Print();
 
     return 0;
 }

@@ -8,7 +8,7 @@ int main()
     Geometry g;
     logNote("Nice");
 
-    //Shader shader("nice","shader");
+    glen::Shader shader("nice","shader");
 
     logError("Nice %i",2);
 

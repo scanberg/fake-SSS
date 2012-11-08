@@ -9,28 +9,31 @@
 #endif
 #include <GL/glfw.h>
 
-class Shader
+namespace glen
 {
-protected:
-	GLuint program;
-	GLuint vertexShader, fragmentShader;
+    class Shader
+    {
+    protected:
+        GLuint program;
+        GLuint vertexShader, fragmentShader;
 
-	bool compiled;
+        bool compiled;
 
-public:
-	Shader();
-	Shader( const char *vertexFile, const char *fragmentFile );
-	~Shader();
+    public:
+        Shader();
+        Shader( const char *vertexFile, const char *fragmentFile );
+        ~Shader();
 
-    void init(const char *vertexFile, const char *fragmentFile);
+        void init(const char *vertexFile, const char *fragmentFile);
 
-	GLint getAttributeLocation(const char *att);
-	GLint getUniformLocation(const char *uni);
+        GLint getAttributeLocation(const char *att);
+        GLint getUniformLocation(const char *uni);
 
-	bool isCompiled() { return compiled; }
+        bool isCompiled() { return compiled; }
 
-	void bind();
-	void unbind();
-};
+        void bind();
+        void unbind();
+    };
+}
 
 #endif

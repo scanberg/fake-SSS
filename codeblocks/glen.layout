@@ -11,27 +11,27 @@
 		<Cursor position="370" topLine="0" />
 	</File>
 	<File name="..\src\ObjLoader.cpp" open="1" top="0" tabpos="9">
-		<Cursor position="3563" topLine="131" />
+		<Cursor position="412" topLine="0" />
 	</File>
 	<File name="..\src\ObjLoader.h" open="1" top="0" tabpos="8">
-		<Cursor position="519" topLine="0" />
+		<Cursor position="562" topLine="0" />
 	</File>
-	<File name="..\src\Shader.cpp" open="1" top="1" tabpos="10">
-		<Cursor position="3529" topLine="87" />
+	<File name="..\src\Shader.cpp" open="1" top="0" tabpos="10">
+		<Cursor position="7567" topLine="2" />
 	</File>
-	<File name="..\src\Shader.h" open="1" top="0" tabpos="11">
-		<Cursor position="392" topLine="0" />
+	<File name="..\src\Shader.h" open="1" top="1" tabpos="11">
+		<Cursor position="709" topLine="0" />
 	</File>
 	<File name="..\src\Tokenizer.cpp" open="1" top="0" tabpos="7">
-		<Cursor position="1181" topLine="32" />
+		<Cursor position="1485" topLine="32" />
 	</File>
 	<File name="..\src\Tokenizer.h" open="1" top="0" tabpos="6">
-		<Cursor position="270" topLine="0" />
+		<Cursor position="1014" topLine="0" />
 	</File>
 	<File name="..\src\Types.h" open="1" top="0" tabpos="3">
 		<Cursor position="387" topLine="0" />
 	</File>
 	<File name="..\src\main.cpp" open="1" top="0" tabpos="4">
-		<Cursor position="185" topLine="1" />
+		<Cursor position="353" topLine="0" />
 	</File>
 </CodeBlocks_layout_file>

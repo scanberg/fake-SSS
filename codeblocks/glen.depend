@@ -1,8 +1,9 @@
 # depslib dependency file v1.0
-1352227295 source:c:\users\gurido\documents\git\glen\src\main.cpp
+1352403601 source:c:\users\gurido\documents\git\glen\src\main.cpp
 	"Geometry.h"
 	"Log.h"
 	"Tokenizer.h"
+	"Shader.h"
 
 1352233430 c:\users\gurido\documents\git\glen\src\geometry.h
 	"Types.h"
@@ -23,10 +24,8 @@
 	<string>
 	<iostream>
 
-1352320114 c:\users\gurido\documents\git\glen\src\log.h
-	<windows.h>
+1352400146 c:\users\gurido\documents\git\glen\src\log.h
 	<cstdlib>
-	<cstdio>
 	<cstdarg>
 
 1352320114 source:c:\users\gurido\documents\git\glen\src\log.cpp
@@ -108,14 +107,14 @@
 1352356455 source:c:\users\gaspachelor\documents\git\glen\src\geometry.cpp
 	"Geometry.h"
 
-1352321066 source:c:\users\gurido\documents\git\glen\src\shader.cpp
+1352403594 source:c:\users\gurido\documents\git\glen\src\shader.cpp
 	<fstream>
 	<cstdio>
 	<string>
 	"Shader.h"
 	"Log.h"
 
-1352320114 c:\users\gurido\documents\git\glen\src\shader.h
+1352404557 c:\users\gurido\documents\git\glen\src\shader.h
 	<iostream>
 	<map>
 	<GL/glew.h>
