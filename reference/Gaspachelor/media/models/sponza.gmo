@@ -1,0 +1,9 @@
+#This is a simple file for making a static object
+
+#MATERIAL
+
+*Material 0 "media/material/rockwall.mat"
+
+# MESH, location scale
+
+*Mesh "media/meshes/scene.obj" 1.00
