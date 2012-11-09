@@ -34,6 +34,8 @@
 		<Linker>
 			<Add library="glew32" />
 		</Linker>
+		<Unit filename="..\src\Engine.cpp" />
+		<Unit filename="..\src\Engine.h" />
 		<Unit filename="..\src\Geometry.cpp" />
 		<Unit filename="..\src\Geometry.h" />
 		<Unit filename="..\src\Log.h" />

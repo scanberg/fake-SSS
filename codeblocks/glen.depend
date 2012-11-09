@@ -58,11 +58,11 @@
 1352382186 source:c:\users\gaspachelor\documents\git\glen\src\log.cpp
 	"Log.h"
 
-1352395358 c:\users\gaspachelor\documents\git\glen\src\log.h
+1352450854 c:\users\gaspachelor\documents\git\glen\src\log.h
 	<cstdlib>
 	<cstdarg>
 
-1352356455 source:c:\users\gaspachelor\documents\git\glen\src\objloader.cpp
+1352450398 source:c:\users\gaspachelor\documents\git\glen\src\objloader.cpp
 	<iostream>
 	<string>
 	<cstdio>
@@ -70,18 +70,18 @@
 	<fstream>
 	"ObjLoader.h"
 
-1352356455 c:\users\gaspachelor\documents\git\glen\src\objloader.h
+1352406066 c:\users\gaspachelor\documents\git\glen\src\objloader.h
 	<vector>
 	"Geometry.h"
 	"Tokenizer.h"
 
-1352356455 c:\users\gaspachelor\documents\git\glen\src\geometry.h
+1352450351 c:\users\gaspachelor\documents\git\glen\src\geometry.h
 	"Types.h"
 	<vector>
 	<cassert>
 	<string>
 
-1352356455 c:\users\gaspachelor\documents\git\glen\src\types.h
+1352450306 c:\users\gaspachelor\documents\git\glen\src\types.h
 	<glm/glm.hpp>
 	<glm/gtc/quaternion.hpp>
 	<glm/gtc/type_ptr.hpp>
@@ -90,7 +90,7 @@
 	<glm/gtx/random.hpp>
 	<omp.h>
 
-1352356455 c:\users\gaspachelor\documents\git\glen\src\tokenizer.h
+1352450596 c:\users\gaspachelor\documents\git\glen\src\tokenizer.h
 	<vector>
 	<iostream>
 	<string>
@@ -98,13 +98,14 @@
 1352356455 source:c:\users\gaspachelor\documents\git\glen\src\tokenizer.cpp
 	"Tokenizer.h"
 
-1352382609 source:c:\users\gaspachelor\documents\git\glen\src\main.cpp
+1352470391 source:c:\users\gaspachelor\documents\git\glen\src\main.cpp
 	"Geometry.h"
 	"Log.h"
 	"Tokenizer.h"
 	"Shader.h"
+	"App.h"
 
-1352356455 source:c:\users\gaspachelor\documents\git\glen\src\geometry.cpp
+1352450461 source:c:\users\gaspachelor\documents\git\glen\src\geometry.cpp
 	"Geometry.h"
 
 1352403594 source:c:\users\gurido\documents\git\glen\src\shader.cpp
@@ -120,16 +121,18 @@
 	<GL/glew.h>
 	<GL/glfw.h>
 
-1352357136 source:c:\users\gaspachelor\documents\git\glen\src\shader.cpp
+1352451405 source:c:\users\gaspachelor\documents\git\glen\src\shader.cpp
 	<fstream>
 	<cstdio>
 	<string>
 	"Shader.h"
 	"Log.h"
 
-1352356455 c:\users\gaspachelor\documents\git\glen\src\shader.h
+1352406066 c:\users\gaspachelor\documents\git\glen\src\shader.h
 	<iostream>
 	<map>
 	<GL/glew.h>
 	<GL/glfw.h>
+
+1352470295 c:\users\gaspachelor\documents\git\glen\src\app.h
 

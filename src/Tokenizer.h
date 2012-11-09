@@ -1,13 +1,14 @@
 /**
-  Tokenizer.h
-
-  A lightweight tokenizer for strings.
-  Internally it uses two different versions,
-  one to recognize blank space ' ' and one generic
-  to recognize characters placed in a string, ex. " ,."
-
-  Author: Robin Skånberg
+* Tokenizer.h
+*
+* A lightweight tokenizer for strings.
+* Internally it uses two different versions,
+* one to recognize blank space ' ' and one generic
+* to recognize characters placed in a string, ex. " ,."
+*
+* Author: Robin Skånberg
 **/
+
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 

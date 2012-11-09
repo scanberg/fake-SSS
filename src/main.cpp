@@ -2,17 +2,17 @@
 #include "Log.h"
 #include "Tokenizer.h"
 #include "Shader.h"
+#include "App.h"
 
 int main()
 {
-    Geometry g;
+    glen::Geometry g;
     logNote("Nice");
 
     glen::Shader shader("nice","shader");
-
     logError("Nice %i",2);
 
-    Tokenizer tok("v  1 2 3   ");
+    Tokenizer tok("v  1 2 3  ");
 
     std::string str;
 
@@ -20,7 +20,6 @@ int main()
     {
         logNote(tok.getToken().c_str());
     }
-
 
     return 0;
 }

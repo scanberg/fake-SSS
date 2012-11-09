@@ -8,12 +8,12 @@
 
 namespace glen
 {
-
     /**
      * filelength - Determine the number of bytes in a file.
      * This is a lazy hack to avoid calling stat(), but it works. /STEGU
      */
-    static int filelength( FILE *ifp ) {
+    static int filelength( FILE *ifp )
+    {
         if(!ifp)
         {
             logError("ifp was passed as NULL");
@@ -51,7 +51,8 @@ namespace glen
         then get information from OpenGl on whether or not the shader was compiled successfully
         and if it wasn't, it will output the file with the problem, as well as the problem.
     */
-    static void validateShader(GLuint shader) {
+    static void validateShader(GLuint shader)
+    {
         char buffer[BUFFER_SIZE];
         GLsizei length = 0;
 
@@ -65,7 +66,8 @@ namespace glen
         related to the validation or linking of the program with it's attached shaders. It will
         then output any issues that have occurred.
     */
-    static void validateProgram(GLuint program) {
+    static void validateProgram(GLuint program)
+    {
         char buffer[BUFFER_SIZE];
         GLsizei length = 0;
 
@@ -97,7 +99,8 @@ namespace glen
         init(vertexFile, fragmentFile);
     }
 
-    Shader::~Shader() {
+    Shader::~Shader()
+    {
         glDetachShader(program, fragmentShader); // Detach the fragment shader
         glDetachShader(program, vertexShader); // Detach the vertex shader
 
