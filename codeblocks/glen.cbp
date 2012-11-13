@@ -33,6 +33,8 @@
 		</Compiler>
 		<Linker>
 			<Add library="glew32" />
+			<Add library="glfw" />
+			<Add library="opengl32" />
 		</Linker>
 		<Unit filename="..\src\Engine.cpp" />
 		<Unit filename="..\src\Engine.h" />

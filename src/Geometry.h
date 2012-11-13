@@ -36,7 +36,7 @@ namespace glen
         /** Functions **/
         void addVertex(const sVertex &vertex);
         void addTriangle(const uvec3 &triangle);
-        void addGeometry(const Geometry &geometry);
+        const Geometry& addGeometry(const Geometry &geometry);
 
         void calculateNormals();
 

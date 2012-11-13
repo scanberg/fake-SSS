@@ -17,8 +17,8 @@ bool glen::Engine::init(int width, int height, bool fullscreen, int samplesPerPi
 {
 	glfwInit();
 
-	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR,3);
-	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR,1);
+	//glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR,3);
+	//glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR,1);
 
 	int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
 
@@ -28,6 +28,10 @@ bool glen::Engine::init(int width, int height, bool fullscreen, int samplesPerPi
 		return false;
 	}
 
+	logNote("Successfully created OpenGL-window, version %i.%i",
+         glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR),
+         glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR));
+
     #ifdef WIN32
 	GLenum err = glewInit();
 	if (GLEW_OK != err)
@@ -36,4 +40,21 @@ bool glen::Engine::init(int width, int height, bool fullscreen, int samplesPerPi
 		return false;
 	}
 	#endif
+
+	return true;
+}
+
+void glen::Engine::update()
+{
+
+}
+
+void glen::Engine::render()
+{
+
+}
+
+void glen::Engine::swapBuffers()
+{
+    glfwSwapBuffers();
 }

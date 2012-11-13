@@ -2,24 +2,27 @@
 #include "Log.h"
 #include "Tokenizer.h"
 #include "Shader.h"
-#include "App.h"
+#include "Engine.h"
 
 int main()
 {
-    glen::Geometry g;
-    logNote("Nice");
+    glen::Engine *engine = new glen::Engine();
 
-    glen::Shader shader("nice","shader");
-    logError("Nice %i",2);
-
-    Tokenizer tok("v  1 2 3  ");
-
-    std::string str;
-
-    while(tok.hasMore())
+    if(!engine->init())
     {
-        logNote(tok.getToken().c_str());
+        delete engine;
+        return 0;
     }
+
+    bool running = true;
+    while(running)
+    {
+        engine->swapBuffers();
+        if(!glfwGetWindowParam(GLFW_OPENED) || glfwGetKey(GLFW_KEY_ESC))
+			running = false;
+    }
+
+    delete engine;
 
     return 0;
 }

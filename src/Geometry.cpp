@@ -62,9 +62,27 @@ namespace glen
         triangles.push_back(triangle);
     }
 
-    void Geometry::addGeometry(const Geometry &geometry)
+    const Geometry& Geometry::addGeometry(const Geometry &geom)
     {
+        u32 vertexOffset = vertices.size();
+        uvec3 tri;
 
+        for(u32 i=0; i<geom.vertices.size(); ++i)
+        {
+            vertices.push_back(geom.vertices[i]);
+        }
+
+        for(u32 i=0; i<geom.triangles.size(); ++i)
+        {
+            tri = geom.triangles[i];
+            tri[0] += vertexOffset;
+            tri[1] += vertexOffset;
+            tri[2] += vertexOffset;
+
+            triangles.push_back(tri);
+        }
+
+        return *this;
     }
 
     void Geometry::clear()
