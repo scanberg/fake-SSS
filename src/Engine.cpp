@@ -17,8 +17,10 @@ bool glen::Engine::init(int width, int height, bool fullscreen, int samplesPerPi
 {
 	glfwInit();
 
-	//glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR,3);
-	//glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR,1);
+	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
+	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
+	//glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
 

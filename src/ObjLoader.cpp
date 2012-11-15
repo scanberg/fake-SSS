@@ -186,8 +186,8 @@ namespace glen
                 //Profiler.StartTimer("TexCoord");
                 vec2 tc;
 
-                tc.s = toFloat(token.getToken());
-                tc.t = toFloat(token.getToken());
+                tc.x = toFloat(token.getToken());
+                tc.y = toFloat(token.getToken());
 
                 tempTexCoord.push_back(tc);
                 //Profiler.StopTimer("TexCoord");

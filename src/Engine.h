@@ -3,6 +3,8 @@
 
 #include "Types.h"
 
+#define ""
+
 namespace glen
 {
     class Engine
@@ -17,6 +19,7 @@ namespace glen
         void swapBuffers();
     private:
         ivec2 windowSize;
+        static Engine* instance;
     };
 }
 

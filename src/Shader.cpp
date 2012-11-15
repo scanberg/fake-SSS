@@ -31,7 +31,7 @@ namespace glen
     static char *readTextFile(const char *filename)
     {
         FILE *file = fopen( filename, "r" );
-        logNote("file is %i",(int)file);
+        logNote("file is %s",filename);
         if( file == NULL )
         {
             logError( "Cannot open shader file!" );
@@ -176,7 +176,7 @@ namespace glen
             {
                 char buffer[BUFFER_SIZE];
                 glGetProgramInfoLog(program, BUFFER_SIZE, &length, buffer);
-                logNote(buffer);
+                logNote("%s",buffer);
             }
 
             glDetachShader(program, vertexShader);
