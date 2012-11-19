@@ -1,6 +1,6 @@
 #include <fstream>
 #include <cstdio>
-#include <string>
+#include <cstring>
 #include "Shader.h"
 #include "Log.h"
 
@@ -24,41 +24,54 @@ namespace glen
         //ifp = fopen( filename, "r" );
         fseek( ifp, 0, SEEK_END );
         length = (int)ftell( ifp );
-        fclose( ifp );
+        fseek( ifp, 0, SEEK_SET );
+        //fclose( ifp );
         return length;
     }
-
+    /**
+     * readTextFile - reads a simple textfile specified by filename,
+     * if everything is ok, a pointer to a null-terminated string is returned,
+     * otherwise NULL is returned.
+     */
     static char *readTextFile(const char *filename)
     {
         FILE *file = fopen( filename, "r" );
-        logNote("file is %s",filename);
+        //logNote("file is %s",filename);
         if( file == NULL )
         {
             logError( "Cannot open shader file!" );
-            return 0;
+            return NULL;
         }
         int bytesinfile = filelength( file );
         char *buffer = (char*)malloc( bytesinfile+1 );
         int bytesread = fread( buffer, 1, bytesinfile, file );
+        //logNote("Bytesread %i", bytesread);
         buffer[bytesread] = 0; // Terminate the string with 0
         fclose( file );
+
+        //logNote("buffer: %s",buffer);
 
         return buffer;
     }
 
     /**
-        Given a shader and the filename associated with it, validateShader will
-        then get information from OpenGl on whether or not the shader was compiled successfully
-        and if it wasn't, it will output the file with the problem, as well as the problem.
-    */
-    static void validateShader(GLuint shader)
+     * Given a shader and the filename associated with it, validateShader will
+     * then get information from OpenGl on whether or not the shader was compiled successfully
+     * and if it wasn't, it will output the file with the problem, as well as the problem.
+     */
+    static bool validateShader(GLuint shader)
     {
         char buffer[BUFFER_SIZE];
         GLsizei length = 0;
 
         glGetShaderInfoLog(shader, BUFFER_SIZE, &length, buffer); // Ask OpenGL to give us the log associated with the shader
         if (length > 11) // If we have any information to display
+        {
             logError("Shader compile error(s): \n%s",buffer);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -66,20 +79,25 @@ namespace glen
         related to the validation or linking of the program with it's attached shaders. It will
         then output any issues that have occurred.
     */
-    static void validateProgram(GLuint program)
+    static bool validateProgram(GLuint program)
     {
-        char buffer[BUFFER_SIZE];
-        GLsizei length = 0;
-
-        glGetProgramInfoLog(program, BUFFER_SIZE, &length, buffer); // Ask OpenGL to give us the log associated with the program
-        if (length > 11) // If we have any information to display
-            logError("Program link error(s): \n%s",buffer); // Output the information
-
         glValidateProgram(program); // Get OpenGL to try validating the program
         GLint status;
         glGetProgramiv(program, GL_VALIDATE_STATUS, &status); // Find out if the shader program validated correctly
+        
         if (status == GL_FALSE) // If there was a problem validating
-            logError("could not validate program");
+        {
+            char buffer[BUFFER_SIZE];
+            GLsizei length = 0;
+
+            glGetProgramInfoLog(program, BUFFER_SIZE, &length, buffer); // Ask OpenGL to give us the log associated with the program
+            if (length > 11) // If we have any information to display
+                logError("Program link error(s): \n%s",buffer); // Output the information
+            
+            return false;
+        }
+
+        return true;
     }
 
     Shader::Shader()
@@ -88,19 +106,32 @@ namespace glen
         fragmentShader  = 0;
         program         = 0;
         compiled        = 0;
+        vertexFile      = NULL;
+        fragmentFile    = NULL;
     }
 
-    Shader::Shader( const char *vertexFile, const char *fragmentFile )
+    Shader::Shader( const char *vertFile, const char *fragFile )
     {
         vertexShader    = 0;
         fragmentShader  = 0;
         program         = 0;
         compiled        = 0;
-        init(vertexFile, fragmentFile);
+        vertexFile      = NULL;
+        fragmentFile    = NULL; 
+
+        setVertexFile(vertFile);
+        setFragmentFile(fragFile);
+        loadAndCompile();
     }
 
     Shader::~Shader()
     {
+        if(vertexFile)
+            delete vertexFile;
+
+        if(fragmentFile)
+            delete fragmentFile;
+
         glDetachShader(program, fragmentShader); // Detach the fragment shader
         glDetachShader(program, vertexShader); // Detach the vertex shader
 
@@ -109,12 +140,49 @@ namespace glen
         glDeleteProgram(program); // Delete the shader program
     }
 
-    void Shader::init(const char *vertexFile, const char *fragmentFile)
+    void Shader::setVertexFile(const char *vertFile)
     {
-        if (compiled) // If we have already initialized the shader
+        if(!vertFile)
         {
-            logNote("Shader is already compiled.");
+            logError("A null-pointer was passed");
             return;
+        }
+
+        if(vertexFile)
+            delete vertexFile;
+
+        int len = (int)strlen(vertFile);
+
+        vertexFile = new char[len+1];
+        strcpy(vertexFile, vertFile);
+        //vertexFile[len] = 0;
+    }
+
+    void Shader::setFragmentFile(const char *fragFile)
+    {
+        if(!fragFile)
+        {
+            logError("A null-pointer was passed");
+            return;
+        }
+
+        if(fragmentFile)
+            delete fragmentFile;
+
+        int len = (int)strlen(fragFile);
+
+        fragmentFile = new char[len+1];
+        strcpy(fragmentFile, fragFile); //, len);
+        //fragmentFile[len] = 0;
+    }
+
+    bool Shader::loadAndCompile()
+    {
+        logNote("IN LOAD AND COMPILE");
+        if(!vertexFile || !fragmentFile)
+        {
+            logError("VertexFile or FragmentFile not specified");
+            return false;
         }
 
         logNote("Building shader from vs: \"%s\" and fs: \"%s\"", vertexFile, fragmentFile);
@@ -124,41 +192,43 @@ namespace glen
 
         if(!vertexShader || !fragmentShader)
         {
-            logError("Unable to create vertex- or fragment- shader");
-            return;
+            logError("OpenGL could not to create vertex- or fragment- shader");
+            return false;
         }
 
         const char *vertexText = readTextFile(vertexFile);
         const char *fragmentText = readTextFile(fragmentFile);
 
-        logNote("HEJ");
-
         if (!vertexText || !fragmentText)
         {
             logError("unable to load shaderFile or fragmentFile");
 
-            delete[] vertexText;
-            delete[] fragmentText;
-            return;
+            delete vertexText;
+            delete fragmentText;
+            return false;
         }
 
         glShaderSource(vertexShader, 1, &vertexText, 0); // Set the source for the vertex shader to the loaded text
         glCompileShader(vertexShader); // Compile the vertex shader
+        delete vertexText;
+
         validateShader(vertexShader); // Validate the vertex shader
 
         glShaderSource(fragmentShader, 1, &fragmentText, 0); // Set the source for the fragment shader to the loaded text
         glCompileShader(fragmentShader); // Compile the fragment shader
+        delete fragmentText;
+        
         validateShader(fragmentShader); // Validate the fragment shader
-
+        
         program = glCreateProgram(); // Create a GLSL program
         glAttachShader(program, vertexShader); // Attach a vertex shader to the program
         glAttachShader(program, fragmentShader); // Attach the fragment shader to the program
 
         glBindAttribLocation(program, 0, "in_position"); // Bind a constant attribute location for positions of vertices
-        glBindAttribLocation(program, 1, "in_normal"); // Bind another constant attribute location, this time for color
-        glBindAttribLocation(program, 2, "in_texCoord");
-        glBindAttribLocation(program, 3, "in_tangent");
-        glBindAttribLocation(program, 4, "in_color");
+        //glBindAttribLocation(program, 1, "in_normal"); // Bind another constant attribute location, this time for color
+        //glBindAttribLocation(program, 2, "in_texCoord");
+        //glBindAttribLocation(program, 3, "in_tangent");
+        //glBindAttribLocation(program, 4, "in_color");
 
         glLinkProgram(program); // Link the vertex and fragment shaders in the program
         validateProgram(program); // Validate the shader program
@@ -190,20 +260,15 @@ namespace glen
             vertexShader=0;
             program=0;
 
-            delete[] vertexText;
-            delete[] fragmentText;
-
-            return;
+            return false;
         }
 
-        compiled = true; // Mark that we have initialized the shader
+        compiled = true; // Mark that we have successfully compiled the shader
 
         logNote("Shader compiled successfully.");
 
-        delete[] vertexText;
-        delete[] fragmentText;
+        return true;
     }
-
 
     GLint Shader::getAttributeLocation(const char *att)
     {

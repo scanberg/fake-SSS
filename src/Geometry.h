@@ -45,6 +45,10 @@ namespace glen
     private:
         friend int loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale );
 
+        u32 vao;
+        u32 vbo_vertex;
+        u32 vbo_triangle;
+
         std::vector<sVertex> vertices;
         std::vector<uvec3> triangles;
     };

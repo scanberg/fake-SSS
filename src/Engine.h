@@ -3,7 +3,9 @@
 
 #include "Types.h"
 
-#define ""
+#define DEFAULT_WIDTH 640
+#define DEFAULT_HEIGHT 480
+#define DEFAULT_FULLSCREEN false
 
 namespace glen
 {
@@ -13,10 +15,16 @@ namespace glen
         Engine();
         ~Engine();
 
-        bool init(i32 width=640, i32 height=480, bool fullscreen=false, int samplesPerPixel=1);
+        bool init(  i32 width=DEFAULT_WIDTH,
+                    i32 height=DEFAULT_HEIGHT,
+                    bool fullscreen=DEFAULT_FULLSCREEN);
+
         void update();
         void render();
+        void clearBuffers();
         void swapBuffers();
+
+        static Engine *getInstance() { return instance; }
     private:
         ivec2 windowSize;
         static Engine* instance;

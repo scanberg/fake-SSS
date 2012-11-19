@@ -3,60 +3,82 @@
 #include <GL/glew.h>
 #include <GL/glfw.h>
 
-glen::Engine::Engine()
+#define R_BPP 8
+#define G_BPP 8
+#define B_BPP 8
+#define A_BPP 8
+#define DEPTH_BPP 32
+#define STENCIL_BPP 8
+
+namespace glen
 {
 
-}
+	Engine *glen::Engine::instance = NULL;
 
-glen::Engine::~Engine()
-{
-
-}
-
-bool glen::Engine::init(int width, int height, bool fullscreen, int samplesPerPixel)
-{
-	glfwInit();
-
-	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-	//glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	//glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-	int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
-
-	if(glfwOpenWindow(width,height,8,8,8,8,32,8,fs)==GL_FALSE)
+	Engine::Engine()
 	{
-		logError("could not create GLFW-window");
-		return false;
+		instance = this;
 	}
 
-	logNote("Successfully created OpenGL-window, version %i.%i",
-         glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR),
-         glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR));
-
-    #ifdef WIN32
-	GLenum err = glewInit();
-	if (GLEW_OK != err)
+	Engine::~Engine()
 	{
-		logError("could not init GLEW");
-		return false;
+
 	}
-	#endif
 
-	return true;
-}
+	bool Engine::init(int width, int height, bool fullscreen)
+	{
+		glfwInit();
 
-void glen::Engine::update()
-{
+		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
+		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
+		//glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		//glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-}
+		int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
 
-void glen::Engine::render()
-{
+		if(!glfwOpenWindow(	width,
+							height,
+							R_BPP, G_BPP, B_BPP, A_BPP,
+							DEPTH_BPP, STENCIL_BPP,
+							fs))
+		{
+			logError("could not create GLFW-window");
+			return false;
+		}
 
-}
+		logNote("Successfully created OpenGL-window, version %i.%i",
+	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR),
+	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR));
 
-void glen::Engine::swapBuffers()
-{
-    glfwSwapBuffers();
+	    #ifdef WIN32
+		GLenum err = glewInit();
+		if (GLEW_OK != err)
+		{
+			logError("could not init GLEW");
+			return false;
+		}
+		#endif
+
+		return true;
+	}
+
+	void Engine::update()
+	{
+
+	}
+
+	void Engine::render()
+	{
+
+	}
+
+	void Engine::clearBuffers()
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	}
+
+	void Engine::swapBuffers()
+	{
+	    glfwSwapBuffers();
+	}
 }

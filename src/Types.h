@@ -18,6 +18,10 @@
 #define PI 3.1415926535893
 #endif
 
+#ifndef UNUSED_ADRESS
+#define UNUSED_ADRESS 0xffffffff
+#endif
+
 namespace glen
 {
     using glm::vec2;

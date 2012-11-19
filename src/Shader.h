@@ -1,9 +1,6 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include <iostream>
-#include <map>
-
 #ifdef WIN32
 #include <GL/glew.h>
 #endif
@@ -13,18 +10,24 @@ namespace glen
 {
     class Shader
     {
-    protected:
+    private:
         GLuint program;
         GLuint vertexShader, fragmentShader;
+        char *vertexFile, *fragmentFile;
 
         bool compiled;
-
     public:
         Shader();
-        Shader( const char *vertexFile, const char *fragmentFile );
+        Shader(const char *vertFile, const char *fragFile);
         ~Shader();
 
-        void init(const char *vertexFile, const char *fragmentFile);
+        bool loadAndCompile();
+
+        void setVertexFile(const char *vertFile);
+        void setFragmentFile(const char *fragFile);
+
+        const char *getVertexFile() { return vertexFile; }
+        const char *getFragmentFile() { return fragmentFile; }
 
         GLint getAttributeLocation(const char *att);
         GLint getUniformLocation(const char *uni);
