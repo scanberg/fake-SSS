@@ -93,6 +93,107 @@ namespace glen
 
     void Geometry::calculateNormals()
     {
+        glm::vec3 a,b,n;
 
+        std::vector<vec3> tempNormal;
+        tempNormal.resize(vertices.size(),vec3(0));
+
+        assert(vertices.size() > 0);
+
+        std::vector<i32> sharedFaces;
+        sharedFaces.resize(vertices.size(), 0);
+
+        for (u32 i=0; i<triangles.size(); ++i)
+        {
+            a = vertices[triangles[i][2]].position - vertices[triangles[i][0]].position;
+            b = vertices[triangles[i][1]].position - vertices[triangles[i][0]].position;
+            n = glm::normalize(glm::cross(b,a));
+
+            for(u32 u=0; u<3; ++u)
+            {
+                tempNormal[triangles[i][u]] += n;
+                sharedFaces[triangles[i][u]]++;
+            }
+        }
+        for (u32 i=0; i<vertices.size(); ++i)
+        {
+            if(sharedFaces[i]>0)
+            {
+                tempNormal[i] /= (f32)sharedFaces[i];
+                tempNormal[i] = glm::normalize(tempNormal[i]);
+            }
+            if(glm::dot(vertices[i].normal,vertices[i].normal) == 0.0f)
+            {
+                vertices[i].normal = tempNormal[i];
+            }
+        }
     }
+
+    bool Geometry::createStaticBuffers()
+    {
+        destroyBuffers();
+
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+        glGenBuffers(1, &vbo_vertex);
+        glGenBuffers(1, &vbo_triangle);
+
+        // bind buffer for vertices and copy data into buffer
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(sVertex), &vertices[0].position[0], GL_STATIC_DRAW);
+
+        // Enable specific pointer for Vertex, for compability-mode and attributepointer for shader
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(3, GL_FLOAT, sizeof(sVertex), (char*)NULL);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL);
+        glEnableVertexAttribArray(0);
+
+        // Enable specific pointer for Normal, for compability-mode and attributepointer for shader
+        glEnableClientState(GL_NORMAL_ARRAY);
+        glNormalPointer(GL_FLOAT, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
+        glEnableVertexAttribArray(1);
+
+        // Enable specific pointer for TextureCoord, for compability-mode and attributepointer for shader
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glTexCoordPointer(2, GL_FLOAT, sizeof(sVertex), (char*)NULL+6*sizeof(f32));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(f32), (char*)NULL+6*sizeof(f32));
+        glEnableVertexAttribArray(2);
+
+        // Enable specific pointer for Color, for compability-mode and attributepointer for shader,
+        // not really color, just the normal used.
+        glEnableClientState(GL_COLOR_ARRAY);
+        glColorPointer(3, GL_FLOAT, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
+        glEnableVertexAttribArray(3);
+
+        // Create and bind a BO for index data
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_triangle);
+        // copy data into the buffer object
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangles.size()*sizeof(uvec3), &triangles[0][0], GL_STATIC_DRAW);
+
+        glBindVertexArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER,0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+
+        return true;
+    }
+
+    void Geometry::destroyBuffers()
+    {
+        if(vbo_vertex != UNUSED_ADRESS)
+            glDeleteBuffers(1, &vbo_vertex);
+
+        if(vbo_triangle != UNUSED_ADRESS)
+            glDeleteBuffers(1, &vbo_triangle);
+
+        if(vao != UNUSED_ADRESS)
+            glDeleteVertexArrays(1, &vao);
+
+        vao=UNUSED_ADRESS;
+        vbo_vertex=UNUSED_ADRESS;
+        vbo_triangle=UNUSED_ADRESS;
+    }
+
 }

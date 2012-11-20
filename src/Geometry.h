@@ -19,6 +19,13 @@ namespace glen
             vec2 texCoord;
         }sVertex;
 
+        Geometry()
+        {
+            vao = UNUSED_ADRESS;
+            vbo_vertex = UNUSED_ADRESS;
+            vbo_triangle = UNUSED_ADRESS;
+        }
+
         /** GET functions **/
         u32 getVertexSize();
         u32 getTriangleSize();
@@ -38,8 +45,14 @@ namespace glen
         void addTriangle(const uvec3 &triangle);
         const Geometry& addGeometry(const Geometry &geometry);
 
-        void calculateNormals();
+        bool createStaticBuffers();
+        bool createDynamicBuffers();
+        inline bool existOnGpu() { return vao != UNUSED_ADRESS; }
+        bool updateBuffers();
 
+        void destroyBuffers();
+
+        void calculateNormals();
         void clear();
 
     private:
