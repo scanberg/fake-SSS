@@ -1,7 +1,9 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include <GL/glew.h>
+//#include <GL/glew.h>
+#define GLFW_INCLUDE_GL3
+#define GLFW_NO_GLU
 #include <GL/glfw.h>
 
 #include <glm/glm.hpp>
@@ -25,8 +27,8 @@
 #define UNUSED_ADRESS 0xffffffff
 #endif
 
-namespace glen
-{
+//namespace glen
+//{
     using glm::vec2;
     using glm::vec3;
     using glm::vec4;
@@ -44,6 +46,8 @@ namespace glen
 
     using glm::quat;
 
+    using glm::value_ptr;
+
     typedef unsigned char 	        u8;
     typedef unsigned short 	        u16;
     typedef unsigned int 	        u32;
@@ -57,6 +61,6 @@ namespace glen
     typedef glm::detail::float16	f16;
     typedef float		 	        f32;
     typedef double			        f64;
-}
+//}
 
 #endif

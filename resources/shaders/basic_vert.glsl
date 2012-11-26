@@ -1,9 +1,19 @@
-#version 140
+#version 150
 
-uniform mat4 viewMatrix, projMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 projMatrix;
+
+uniform float time;
+ 
 in vec3 in_position;
+in vec3 in_normal;
 
-void main()
+out vec3 Normal;
+out vec3 ViewDir;
+ 
+void main(void)
 {
-	gl_Position = projMatrix * viewMatrix * vec4(in_position,1.0); 
+	Normal = mat3(viewMatrix) * in_normal;
+	gl_Position = projMatrix * viewMatrix * vec4(in_position + 0.1 * Normal * sin(time), 1.0);
+	ViewDir = vec3(viewMatrix * vec4(in_position, 1.0));
 }

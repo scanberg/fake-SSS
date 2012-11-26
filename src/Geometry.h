@@ -19,12 +19,8 @@ namespace glen
             vec2 texCoord;
         }sVertex;
 
-        Geometry()
-        {
-            vao = UNUSED_ADRESS;
-            vbo_vertex = UNUSED_ADRESS;
-            vbo_triangle = UNUSED_ADRESS;
-        }
+        Geometry();
+        ~Geometry();
 
         /** GET functions **/
         u32 getVertexSize();
@@ -45,7 +41,7 @@ namespace glen
         void addTriangle(const uvec3 &triangle);
         const Geometry& addGeometry(const Geometry &geometry);
 
-        bool createStaticBuffers();
+        bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint texLoc=2);
         bool createDynamicBuffers();
         inline bool existOnGpu() { return vao != UNUSED_ADRESS; }
         bool updateBuffers();
@@ -54,6 +50,8 @@ namespace glen
 
         void calculateNormals();
         void clear();
+
+        void draw();
 
     private:
         friend int loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale );

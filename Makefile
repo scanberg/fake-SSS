@@ -7,7 +7,7 @@ MESSAGE =
 OPENGL=1
 
 #specify dependency list
-OBJECTS ?= src/main.o src/Engine.o src/Geometry.o src/ObjLoader.o src/Shader.o src/Tokenizer.o
+OBJECTS ?= src/main.o src/Engine.o src/Geometry.o src/ObjLoader.o src/Shader.o src/Tokenizer.o src/Camera.o src/Log.o
 OUTPUT ?= Program
 FLAGS ?=
 CFLAGS ?= -O3 -fopenmp
@@ -20,7 +20,7 @@ ifdef OPENGL
 		# CPPFLAGS := -lGL -lGLU -lX11 -static-libgcc -static-libstdc++
 		FLAGS += -lglfw
 	else ifeq ($(OS),Darwin)
-		FLAGS += -framework Cocoa -framework OpenGL -lglfw
+		FLAGS += -framework Cocoa -framework OpenGL -lGLEW -lglfw
 	endif
 endif
 

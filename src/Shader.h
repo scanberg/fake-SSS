@@ -13,8 +13,23 @@ namespace glen
     private:
         GLuint program;
         GLuint vertexShader, fragmentShader;
-        char *vertexFile, *fragmentFile;
 
+        /*
+         * Holders for predefined locations in the shader.
+         * The predefined variables are:
+         *
+         * in_position: position data sent to vertex shader.
+         * in_normal: normal data sent to vertex shader.
+         * in_texCoord: texture coordinate data sent to vertex shader.
+         *
+         * viewMatrix
+         * projMatrix
+         */
+         
+        GLint positionLoc, normalLoc, texCoordLoc;
+        GLint viewMatrixLoc, projMatrixLoc;
+
+        char *vertexFile, *fragmentFile;
         bool compiled;
     public:
         Shader();
@@ -31,6 +46,13 @@ namespace glen
 
         GLint getAttributeLocation(const char *att);
         GLint getUniformLocation(const char *uni);
+
+        GLint getPositionLocation() { return positionLoc; }
+        GLint getNormalLocation() { return normalLoc; }
+        GLint getTexCoordLocation() { return texCoordLoc; }
+
+        GLint getViewMatrixLocation() { return viewMatrixLoc; }
+        GLint getProjMatrixLocation() { return projMatrixLoc; }
 
         bool isCompiled() { return compiled; }
 

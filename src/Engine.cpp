@@ -1,7 +1,7 @@
 #include "Engine.h"
 #include "Log.h"
-#include <GL/glew.h>
-#include <GL/glfw.h>
+//#include <GL/glew.h>
+//#include <GL/glfw.h>
 
 #define R_BPP 8
 #define G_BPP 8
@@ -18,6 +18,7 @@ namespace glen
 	Engine::Engine()
 	{
 		instance = this;
+		currentShader = NULL;
 	}
 
 	Engine::~Engine()
@@ -30,9 +31,9 @@ namespace glen
 		glfwInit();
 
 		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 1);
-		//glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		//glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
+		glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 		int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
 
@@ -46,9 +47,20 @@ namespace glen
 			return false;
 		}
 
+		logErrorsGL();
+
+		/*GLenum err = glewInit();
+		if (GLEW_OK != err)
+		{
+			logError("GLEW init error");
+			return false;
+		}*/
+
 		logNote("Successfully created OpenGL-window, version %i.%i",
 	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR),
 	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR));
+
+		logNote("GLSL-version: %s",glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 	    #ifdef WIN32
 		GLenum err = glewInit();
@@ -58,6 +70,10 @@ namespace glen
 			return false;
 		}
 		#endif
+
+		glEnable(GL_DEPTH_TEST);
+    	glEnable(GL_CULL_FACE);
+    	glfwSwapInterval(1);
 
 		return true;
 	}
@@ -74,7 +90,7 @@ namespace glen
 
 	void Engine::clearBuffers()
 	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	void Engine::swapBuffers()

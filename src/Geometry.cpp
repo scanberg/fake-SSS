@@ -1,7 +1,21 @@
 #include "Geometry.h"
 
+#include "Log.h"
+
 namespace glen
 {
+    Geometry::Geometry()
+    {
+        vao = UNUSED_ADRESS;
+        vbo_vertex = UNUSED_ADRESS;
+        vbo_triangle = UNUSED_ADRESS;
+    }
+
+    Geometry::~Geometry()
+    {
+        destroyBuffers();
+    }
+
     u32 Geometry::getVertexSize() { return vertices.size(); }
     u32 Geometry::getTriangleSize() { return triangles.size(); }
 
@@ -129,7 +143,7 @@ namespace glen
         }
     }
 
-    bool Geometry::createStaticBuffers()
+    bool Geometry::createStaticBuffers(GLint posLoc, GLint normLoc, GLint texLoc)
     {
         destroyBuffers();
 
@@ -140,32 +154,49 @@ namespace glen
 
         // bind buffer for vertices and copy data into buffer
         glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(sVertex), &vertices[0].position[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(sVertex), &vertices[0].position[0], GL_STATIC_DRAW);
 
         // Enable specific pointer for Vertex, for compability-mode and attributepointer for shader
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, sizeof(sVertex), (char*)NULL);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL);
-        glEnableVertexAttribArray(0);
+        //glEnableClientState(GL_VERTEX_ARRAY);
+        //glVertexPointer(3, GL_FLOAT, sizeof(sVertex), (char*)NULL);
+
+        if(posLoc > -1)
+        {
+            glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL);
+            glEnableVertexAttribArray(posLoc);
+        }
+        else
+        {
+            logWarning("posLoc in createStaticBuffer was undefined");
+        }
 
         // Enable specific pointer for Normal, for compability-mode and attributepointer for shader
-        glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
-        glEnableVertexAttribArray(1);
+        //glEnableClientState(GL_NORMAL_ARRAY);
+        //glNormalPointer(GL_FLOAT, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
+
+        if(normLoc > -1)
+        {
+            glVertexAttribPointer(normLoc, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
+            glEnableVertexAttribArray(normLoc);
+        }
+        else
+        {
+            logWarning("normLoc in createStaticBuffer was undefined");
+        }
 
         // Enable specific pointer for TextureCoord, for compability-mode and attributepointer for shader
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2, GL_FLOAT, sizeof(sVertex), (char*)NULL+6*sizeof(f32));
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(f32), (char*)NULL+6*sizeof(f32));
-        glEnableVertexAttribArray(2);
+        //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        //glTexCoordPointer(2, GL_FLOAT, sizeof(sVertex), (char*)NULL+6*sizeof(f32));
 
-        // Enable specific pointer for Color, for compability-mode and attributepointer for shader,
-        // not really color, just the normal used.
-        glEnableClientState(GL_COLOR_ARRAY);
-        glColorPointer(3, GL_FLOAT, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+3*sizeof(f32));
-        glEnableVertexAttribArray(3);
+        if(texLoc > -1)
+        {
+            glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+6*sizeof(f32));
+            glEnableVertexAttribArray(texLoc);
+        }
+        else
+        {
+            logWarning("texLoc in createStaticBuffer was undefined");
+        }
 
         // Create and bind a BO for index data
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_triangle);
@@ -176,6 +207,11 @@ namespace glen
 
         glBindBuffer(GL_ARRAY_BUFFER,0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+
+        logNote("createdStaticBuffers");
+        logNote("vertices.size(): %i", vertices.size());
+        logNote("triangles.size(): %i", triangles.size());
+        logNote("sVertex size %i", sizeof(sVertex));
 
         return true;
     }
@@ -194,6 +230,16 @@ namespace glen
         vao=UNUSED_ADRESS;
         vbo_vertex=UNUSED_ADRESS;
         vbo_triangle=UNUSED_ADRESS;
+    }
+
+    void Geometry::draw()
+    {
+        if(vao != UNUSED_ADRESS)
+        {
+            glBindVertexArray(vao);
+            glDrawElements(GL_TRIANGLES, 3 * triangles.size(), GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
+        }
     }
 
 }
