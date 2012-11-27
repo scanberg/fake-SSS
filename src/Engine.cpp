@@ -23,7 +23,6 @@ namespace glen
 
 	Engine::~Engine()
 	{
-
 	}
 
 	bool Engine::init(int width, int height, bool fullscreen)
@@ -34,6 +33,8 @@ namespace glen
 		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
 		glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+		glfwOpenWindowHint( GLFW_WINDOW_NO_RESIZE, GL_TRUE );
 
 		int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
 
@@ -96,5 +97,63 @@ namespace glen
 	void Engine::swapBuffers()
 	{
 	    glfwSwapBuffers();
+	}
+
+	void Engine::createFBO()
+	{
+		destroyFBO();
+
+	    // generate namespace for the frame buffer, colorbuffer and depthbuffer
+	    glGenFramebuffers(1,&fbo);
+	    glGenTextures(1,&colorMap);
+	    glGenTextures(1,&normalMap);
+	    glGenTextures(1,&depthMap);
+	    
+	    //switch to our fbo so we can bind stuff to it
+	    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	    
+	    //create the colorbuffer texture and attach it to the frame buffer
+	    glBindTexture(GL_TEXTURE_2D, colorMap);
+	    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, windowSize.x, windowSize.y, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, colorMap, 0);
+	    
+	    glBindTexture(GL_TEXTURE_2D, normalMap);
+	    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, windowSize.x, windowSize.y, 0,GL_RG, GL_FLOAT, NULL);
+	    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D, normalMap, 0);
+	    
+	    glBindTexture(GL_TEXTURE_2D, depthMap);
+	    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, windowSize.x, windowSize.y, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+	    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, depthMap, 0);
+	    
+	    glBindTexture(GL_TEXTURE_2D, 0);
+	    
+	    // Go back to regular frame buffer rendering
+	    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void Engine::destroyFBO()
+	{
+		if(fbo != UNUSED_ADRESS)
+	    	glDeleteFramebuffers(1,&fbo);
+	    if(colorMap != UNUSED_ADRESS)
+	    	glDeleteTextures(1,&colorMap);
+	    if(normalMap != UNUSED_ADRESS)
+	    	glDeleteTextures(1,&normalMap);
+	    if(depthMap != UNUSED_ADRESS)
+	    	glDeleteTextures(1,&depthMap);
+
+	    fbo = colorMap = normalMap = depthMap = UNUSED_ADRESS;
 	}
 }

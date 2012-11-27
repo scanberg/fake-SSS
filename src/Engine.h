@@ -31,9 +31,14 @@ namespace glen
         static Engine *getInstance() { return instance; }
     private:
         void setCurrentShader( Shader* shad ) { currentShader = shad; }
+        void createFBO();
+        void destroyFBO();
         static Engine* instance;
         ivec2 windowSize;
         Shader *currentShader;
+
+        u32 fbo;
+        u32 colorMap, normalMap, depthMap;
     };
 }
 

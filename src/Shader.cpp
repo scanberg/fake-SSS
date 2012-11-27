@@ -214,12 +214,18 @@ namespace glen
         glAttachShader(program,fragmentShader);
      
         //glBindFragDataLocation(program, 0, "outputF");
+        glBindAttribLocation(program, 0, "in_position");
+        glBindAttribLocation(program, 1, "in_normal");
+        glBindAttribLocation(program, 2, "in_texCoord");
+
         glLinkProgram(program);
         printProgramInfoLog(program);
      
         positionLoc = glGetAttribLocation(program,"in_position");
         normalLoc = glGetAttribLocation(program, "in_normal");
         texCoordLoc = glGetAttribLocation(program, "in_texCoord");
+
+        logNote("posLoc %i, normLoc %i, texLoc %i", positionLoc, normalLoc, texCoordLoc);
      
         projMatrixLoc = glGetUniformLocation(program, "projMatrix");
         viewMatrixLoc = glGetUniformLocation(program, "viewMatrix");
