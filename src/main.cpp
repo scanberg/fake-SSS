@@ -47,8 +47,12 @@ int main()
 
     createFBO();
 
+    logNote("Before ze shaders");
+
     glen::Shader depthShader("resources/shaders/depth_vert.glsl","resources/shaders/depth_frag.glsl");
     glen::Shader skinShader("resources/shaders/skin_vert.glsl", "resources/shaders/skin_frag.glsl");
+
+    logNote("After ze shaders");
 
     glen::Geometry bunny;
     glen::loadObj(bunny,"resources/meshes/bunny.obj",0.8f);
@@ -178,7 +182,10 @@ void setupModelMatrix(mat4 &mat)
 
 void createFBO()
 {
+    logNote("Creating FBO");
     glGenTextures(1,&depthMap);
+
+    logNote("texture generated");
 
     glBindTexture(GL_TEXTURE_2D, depthMap);
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
@@ -188,7 +195,11 @@ void createFBO()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, WINDOW_WIDTH, WINDOW_HEIGHT, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    logNote("Texture is set");
+
     glGenFramebuffers(1,&fbo);
+
+    logNote("Nice");
     
     //switch to our fbo so we can bind stuff to it
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -205,6 +216,8 @@ void createFBO()
     
     // Go back to regular frame buffer rendering
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    logNote("Done Creating FBO");
 }
 
 void destroyFBO()
@@ -228,7 +241,6 @@ void loadTexture(const char *filename, GLuint texID) {
         logError("texture could not be loaded");
     }
 
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture( GL_TEXTURE_2D, texID );
 
     glfwLoadTextureImage2D( &img, 0 );
@@ -237,4 +249,6 @@ void loadTexture(const char *filename, GLuint texID) {
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glfwFreeImage(&img); // Clean up the malloc()'ed data pointer
+
+    glBindTexture( GL_TEXTURE_2D, 0 );
 }

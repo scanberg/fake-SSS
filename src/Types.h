@@ -1,8 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include <GL/glew.h>
-//#define GLFW_INCLUDE_GL3
+//#include <GL/glew.h>
+#define GLFW_INCLUDE_GL3
 #define GLFW_NO_GLU
 #include <GL/glfw.h>
 

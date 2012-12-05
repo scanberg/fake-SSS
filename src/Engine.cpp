@@ -50,12 +50,12 @@ namespace glen
 
 		logErrorsGL();
 
-		GLenum err = glewInit();
+		/*GLenum err = glewInit();
 		if (GLEW_OK != err)
 		{
 			logError("GLEW init error");
 			return false;
-		}
+		}*/
 
 		logNote("Successfully created OpenGL-window, version %i.%i",
 	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR),

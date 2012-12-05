@@ -1,7 +1,9 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "Types.h"
+#define GLFW_INCLUDE_GL3
+#define GLFW_NO_GLU
+#include <GL/glfw.h>
 
 namespace glen
 {

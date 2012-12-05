@@ -10,8 +10,18 @@ public:
 	FrameBuffer2D(int numAuxBuffers = 1);
 	~FrameBuffer2D();
 
-	void assignAuxBuffer(int auxIndex, int width, int height, int internalFormat, int format, int type);
-	void assignDepthBuffer(int width, int height, int internalFormat, int format, int type);
+	void assignAuxBuffer(	int auxIndex, int width, int height,
+							int internalFormat, int format, int type,
+							int textureMinFilter, int textureMaxFilter, int textureWrap);
+
+	void assignDepthBuffer(	int width, int height,
+							int internalFormat = 	GL_DEPTH_COMPONENT,
+							int format = 			GL_DEPTH_COMPONENT,
+							int type = 				GL_UNSIGNED_BYTE,
+							int textureMinFilter = 	GL_NEAREST,
+							int textureMaxFilter = 	GL_NEAREST,
+							int textureWrapS = 		GL_CLAMP_TO_EDGE,
+							int textureWrapT = 		GL_CLAMP_TO_EDGE);
 
 	bool createBuffers();
 	void destroyBuffers();
