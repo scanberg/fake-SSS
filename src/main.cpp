@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "Types.h"
 #include "Geometry.h"
 #include "ObjLoader.h"
@@ -20,8 +21,8 @@ GLuint depthMap;
 
 int main()
 {
-    fbo = UNUSED_ADRESS;
-    depthMap = UNUSED_ADRESS;
+    fbo = 0;
+    depthMap = 0;
     glen::Engine *engine = new glen::Engine();
 
     if(!engine->init(WINDOW_WIDTH,WINDOW_HEIGHT))
@@ -33,6 +34,8 @@ int main()
     float time;
     int timeLoc;
     int textureLoc;
+
+    GLuint testTexture = 0;
 
     glen::Camera cam;
     vec3 lookPos(0,2,0);
@@ -82,8 +85,6 @@ int main()
     glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
     //glBindTexture(GL_TEXTURE_2D, depthMap);
-
-    GLuint testTexture;
 
     loadTexture("resources/textures/texture.tga", testTexture);
     glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -200,7 +201,7 @@ void createFBO()
     // check FBO status
     GLenum FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if(FBOstatus != GL_FRAMEBUFFER_COMPLETE)
-        printf("GL_FRAMEBUFFER_COMPLETE_EXT failed, CANNOT use FBO\n");
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO\n");
     
     // Go back to regular frame buffer rendering
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -208,9 +209,9 @@ void createFBO()
 
 void destroyFBO()
 {
-    if(fbo != UNUSED_ADRESS)
+    if(fbo)
         glDeleteFramebuffers(1,&fbo);
-    if(depthMap != UNUSED_ADRESS)
+    if(depthMap)
         glDeleteTextures(1,&depthMap);
 }
 

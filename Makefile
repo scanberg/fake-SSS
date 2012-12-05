@@ -10,15 +10,15 @@ OPENGL=1
 OBJECTS ?= src/main.o src/Engine.o src/Geometry.o src/ObjLoader.o src/Shader.o src/Tokenizer.o src/Camera.o src/Log.o
 OUTPUT ?= Program
 FLAGS ?=
-CFLAGS ?= -O3 -fopenmp
+CFLAGS ?= -O3
 INCPATH ?=
 
 # check if argument OPENGL=1 is set, reguires glfw to be properly installed
 ifdef OPENGL
 	MESSAGE += OpenGL,
 	ifeq ($(OS),Linux)
-		# CPPFLAGS := -lGL -lGLU -lX11 -static-libgcc -static-libstdc++
-		FLAGS += -lglfw
+		#FLAGS := -lGL -lGLU -lX11 -static-libgcc -static-libstdc++
+		FLAGS += -lglfw -lGLEW
 	else ifeq ($(OS),Darwin)
 		FLAGS += -framework Cocoa -framework OpenGL -lGLEW -lglfw
 	endif

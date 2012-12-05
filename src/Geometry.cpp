@@ -6,9 +6,9 @@ namespace glen
 {
     Geometry::Geometry()
     {
-        vao = UNUSED_ADRESS;
-        vbo_vertex = UNUSED_ADRESS;
-        vbo_triangle = UNUSED_ADRESS;
+        vao = 0;
+        vbo_vertex = 0;
+        vbo_triangle = 0;
     }
 
     Geometry::~Geometry()
@@ -218,23 +218,21 @@ namespace glen
 
     void Geometry::destroyBuffers()
     {
-        if(vbo_vertex != UNUSED_ADRESS)
+        if(glIsBuffer(vbo_vertex))
             glDeleteBuffers(1, &vbo_vertex);
 
-        if(vbo_triangle != UNUSED_ADRESS)
+        if(glIsBuffer(vbo_triangle))
             glDeleteBuffers(1, &vbo_triangle);
 
-        if(vao != UNUSED_ADRESS)
+        if(glIsVertexArray(vao))
             glDeleteVertexArrays(1, &vao);
 
-        vao=UNUSED_ADRESS;
-        vbo_vertex=UNUSED_ADRESS;
-        vbo_triangle=UNUSED_ADRESS;
+        vao = vbo_vertex = vbo_triangle = 0;
     }
 
     void Geometry::draw()
     {
-        if(vao != UNUSED_ADRESS)
+        if(vao)
         {
             glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, 3 * triangles.size(), GL_UNSIGNED_INT, 0);

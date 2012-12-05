@@ -42,9 +42,8 @@ namespace glen
         const Geometry& addGeometry(const Geometry &geometry);
 
         bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint texLoc=2);
-        bool bindAttribLocations(GLint posLoc=0, GLint normLoc=1, GLint texLoc=2);
         bool createDynamicBuffers();
-        inline bool existOnGpu() { return vao != UNUSED_ADRESS; }
+        inline bool existOnGpu() { return glIsVertexArray(vao); }
         bool updateBuffers();
 
         void destroyBuffers();

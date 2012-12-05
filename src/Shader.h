@@ -1,10 +1,7 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#ifdef WIN32
-#include <GL/glew.h>
-#endif
-#include <GL/glfw.h>
+#include "Types.h"
 
 namespace glen
 {

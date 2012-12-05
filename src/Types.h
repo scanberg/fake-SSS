@@ -1,8 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-//#include <GL/glew.h>
-#define GLFW_INCLUDE_GL3
+#include <GL/glew.h>
+//#define GLFW_INCLUDE_GL3
 #define GLFW_NO_GLU
 #include <GL/glfw.h>
 
@@ -13,7 +13,6 @@
 #include <glm/gtx/euler_angles.hpp>
 //#include <glm/gtc/random.hpp>
 #include <glm/gtx/random.hpp>
-#include <omp.h>
 
 #ifndef MAXFLOAT
 #define MAXFLOAT 1e+37f
@@ -21,10 +20,6 @@
 
 #ifndef PI
 #define PI 3.1415926535893
-#endif
-
-#ifndef UNUSED_ADRESS
-#define UNUSED_ADRESS 0xffffffff
 #endif
 
 //namespace glen

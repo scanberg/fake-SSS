@@ -1,6 +1,7 @@
 #ifndef Log_H
 #define Log_H
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstdarg>
 

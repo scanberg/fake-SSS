@@ -4,8 +4,8 @@
 #include "Types.h"
 #include "Shader.h"
 
-#define DEFAULT_WIDTH 640
-#define DEFAULT_HEIGHT 480
+#define DEFAULT_WIDTH 1024
+#define DEFAULT_HEIGHT 769
 #define DEFAULT_FULLSCREEN false
 
 namespace glen
@@ -21,18 +21,22 @@ namespace glen
                     i32 height=DEFAULT_HEIGHT,
                     bool fullscreen=DEFAULT_FULLSCREEN);
 
-        void update();
+        void update(); 
         void render();
         void clearBuffers();
         void swapBuffers();
 
-        Shader *getCurrentShader() { return currentShader; }
+        // Set functions
+        void setWindowSize(ivec2 size);
 
+        // Get functions
+        Shader *getCurrentShader() { return currentShader; }
+        ivec2 getWindowSize() { return windowSize; }
+
+        // Static functions
         static Engine *getInstance() { return instance; }
     private:
         void setCurrentShader( Shader* shad ) { currentShader = shad; }
-        void createFBO();
-        void destroyFBO();
         static Engine* instance;
         ivec2 windowSize;
         Shader *currentShader;

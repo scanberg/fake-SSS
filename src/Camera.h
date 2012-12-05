@@ -1,7 +1,8 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#ifndef GLEN_CAMERA_H
+#define GLEN_CAMERA_H
 
 #include "Types.h"
+#include "Engine.h"
 
 #define CAMERA_PLANE_LEFT   0
 #define CAMERA_PLANE_RIGHT  1

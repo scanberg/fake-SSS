@@ -225,7 +225,7 @@ namespace glen
         normalLoc = glGetAttribLocation(program, "in_normal");
         texCoordLoc = glGetAttribLocation(program, "in_texCoord");
 
-        logNote("posLoc %i, normLoc %i, texLoc %i", positionLoc, normalLoc, texCoordLoc);
+        logNote("programId: %i, posLoc %i, normLoc %i, texLoc %i", program, positionLoc, normalLoc, texCoordLoc);
      
         projMatrixLoc = glGetUniformLocation(program, "projMatrix");
         viewMatrixLoc = glGetUniformLocation(program, "viewMatrix");
