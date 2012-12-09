@@ -117,6 +117,14 @@ out vec4 out_Color;
 const float maxThickness = 0.01;
 
 const vec3 insideColor = vec3(0.5,0.1,0.1);
+
+const float f = 50.0;
+const float n = 0.1;
+
+float linearizeDepth(sampler2D tex, vec2 tc)
+{
+  return (2.0 * n) / (f + n - texture2D( tex, tc ).r * (f - n));
+}
  
 void main(void)
 {

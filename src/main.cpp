@@ -7,13 +7,14 @@
 #include "Engine.h"
 #include "Camera.h"
 #include "Log.h"
+#include "Framebuffer2D.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
 void setupModelMatrix(mat4 &mat);
-void createFBO();
-void destroyFBO();
+// void createFBO();
+// void destroyFBO();
 void loadTexture(const char *filename, GLuint texID);
 
 GLuint fbo;
@@ -35,7 +36,7 @@ int main()
     int timeLoc;
     int textureLoc;
 
-    GLuint testTexture = 0;
+    // GLuint testTexture = 0;
 
     glen::Camera cam;
     vec3 lookPos(0,2,0);
@@ -45,53 +46,43 @@ int main()
 
     mat4 modelMatrix, modelViewMatrix;
 
-    createFBO();
+    Framebuffer2D fbod(0);
+    fbod.attachBuffer(FBO_DEPTH, 640, 480, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE);
 
-    logNote("Before ze shaders");
+    // createFBO();
 
-    glen::Shader depthShader("resources/shaders/depth_vert.glsl","resources/shaders/depth_frag.glsl");
-    glen::Shader skinShader("resources/shaders/skin_vert.glsl", "resources/shaders/skin_frag.glsl");
+    Shader depthShader("resources/shaders/depth_vert.glsl","resources/shaders/depth_frag.glsl");
+    Shader skinShader("resources/shaders/skin_vert.glsl", "resources/shaders/skin_frag.glsl");
+    Shader basicShader("resources/shaders/basic_vert.glsl", "resources/shaders/basic_frag.glsl");
 
-    logNote("After ze shaders");
-
-    glen::Geometry bunny;
-    glen::loadObj(bunny,"resources/meshes/bunny.obj",0.8f);
+    Geometry bunny;
+    loadObj(bunny,"resources/meshes/bunny.obj",0.8f);
     bunny.createStaticBuffers();
 
-    glen::Geometry fsquad;
-    glen::Geometry::sVertex v;
-    v.position = vec3(-1,-1,0);
-    v.texCoord = vec2(0,0);
-    fsquad.addVertex(v);
+    Geometry fsquad;
+    Geometry::sVertex v;
 
-    v.position = vec3(1,-1,0);
-    v.texCoord = vec2(1,0);
-    fsquad.addVertex(v);
-
-    v.position = vec3(1,1,0);
-    v.texCoord = vec2(1,1);
-    fsquad.addVertex(v);
-
-    v.position = vec3(-1,1,0);
-    v.texCoord = vec2(0,1);
-    fsquad.addVertex(v);
+    v.position = vec3(-1,-1, 0); v.texCoord = vec2(0,0); fsquad.addVertex(v);
+    v.position = vec3( 1,-1, 0); v.texCoord = vec2(1,0); fsquad.addVertex(v);
+    v.position = vec3( 1, 1, 0); v.texCoord = vec2(1,1); fsquad.addVertex(v);
+    v.position = vec3(-1, 1, 0); v.texCoord = vec2(0,1); fsquad.addVertex(v);
 
     fsquad.addTriangle(uvec3(0,1,2));
     fsquad.addTriangle(uvec3(0,2,3));
 
     fsquad.createStaticBuffers();
 
-    timeLoc = skinShader.getUniformLocation("time");
+    timeLoc = skinShader.getUniformLocation("time"); 
     textureLoc = skinShader.getUniformLocation("texture0");
 
     glClearColor(1.0,1.0,1.0,1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, depthMap);
 
-    loadTexture("resources/textures/texture.tga", testTexture);
-    glBindTexture(GL_TEXTURE_2D, depthMap);
+    //makeloadTexture("resources/textures/texture.tga", testTexture);
+    glBindTexture(GL_TEXTURE_2D, fbod.getBufferHandle(FBO_DEPTH));
+    // glBindTexture(GL_TEXTURE_2D, depthMap);
 
     while(true)
     {
@@ -102,11 +93,13 @@ int main()
 
         depthShader.bind();
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glClearDepth(0.0);
+        //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+        fbod.bind();
+        glClearDepth(1.0);
         glClear(GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_FRONT);
-        glDepthFunc(GL_GREATER);
+        glDepthFunc(GL_LESS);
 
         glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
         glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
@@ -114,7 +107,10 @@ int main()
         // first pass, write linear depth of the back-faces.
         bunny.draw();
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        fbod.unbind();
+
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         glClearDepth(1.0);
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
         glCullFace(GL_BACK);
@@ -133,14 +129,18 @@ int main()
             glUniform1i(textureLoc, 0);
         }
 
-        //glBindTexture(GL_TEXTURE_2D, depthMap);
-
         glUniformMatrix4fv(skinShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
         glUniformMatrix4fv(skinShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
 
-        bunny.draw();
+        //bunny.draw();
 
         skinShader.unbind();
+
+        basicShader.bind();
+
+        fsquad.draw();
+
+        basicShader.unbind();
 
         if(glfwGetKey(GLFW_KEY_SPACE))
             skinShader.loadAndCompile();
@@ -150,10 +150,10 @@ int main()
 			break;
     }
 
-    destroyFBO();
-
     //clean up
     delete engine;
+
+    // destroyFBO();
 
     return 0;
 }
@@ -180,66 +180,60 @@ void setupModelMatrix(mat4 &mat)
 
 }
 
-void createFBO()
-{
-    logNote("Creating FBO");
-    glGenTextures(1,&depthMap);
+// void createFBO()
+// {
+//     logNote("Creating FBO");
+//     glGenTextures(1,&depthMap);
 
-    logNote("texture generated");
+//     logNote("texture generated");
 
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, WINDOW_WIDTH, WINDOW_HEIGHT, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-    glBindTexture(GL_TEXTURE_2D, 0);
+//     glBindTexture(GL_TEXTURE_2D, depthMap);
+//     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+//     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+//     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, WINDOW_WIDTH, WINDOW_HEIGHT, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+//     glBindTexture(GL_TEXTURE_2D, 0);
 
-    logNote("Texture is set");
-
-    glGenFramebuffers(1,&fbo);
-
-    logNote("Nice");
+//     glGenFramebuffers(1,&fbo);
     
-    //switch to our fbo so we can bind stuff to it
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//     //switch to our fbo so we can bind stuff to it
+//     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, depthMap, 0);
+//     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
 
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
+//     glDrawBuffer(GL_NONE);
+//     glReadBuffer(GL_NONE);
 
-    // check FBO status
-    GLenum FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE)
-        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO\n");
+//     // check FBO status
+//     GLenum FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+//     if(FBOstatus != GL_FRAMEBUFFER_COMPLETE)
+//         printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO\n");
     
-    // Go back to regular frame buffer rendering
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//     // Go back to regular frame buffer rendering
+//     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    logNote("Done Creating FBO");
-}
+//     logNote("Done Creating FBO");
+// }
 
-void destroyFBO()
-{
-    if(fbo)
-        glDeleteFramebuffers(1,&fbo);
-    if(depthMap)
-        glDeleteTextures(1,&depthMap);
-}
+// void destroyFBO()
+// {
+//     if(fbo)
+//         glDeleteFramebuffers(1,&fbo);
+//     if(depthMap)
+//         glDeleteTextures(1,&depthMap);
+// }
 
 /*
  * loadTexture - load 8-bit texture data from a TGA file
- * and set up the corresponding texture object.
+ * and set up the corresponding texture object.     //STEGU
  */
 void loadTexture(const char *filename, GLuint texID) {
   
     GLFWimage img; // Use intermediate GLFWimage to get width and height
 
     if(!glfwReadImage(filename, &img, GLFW_NO_RESCALE_BIT))
-    {
         logError("texture could not be loaded");
-    }
 
     glBindTexture( GL_TEXTURE_2D, texID );
 

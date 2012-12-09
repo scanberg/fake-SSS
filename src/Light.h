@@ -2,6 +2,7 @@
 #define LIGHT_H
 
 #include "Types.h"
+#include "Framebuffer2D.h"
 
 class Light
 {
@@ -9,17 +10,14 @@ public:
 	Light();
 	~Light();
 	
-	void renderShadowMap();
 private:
-	ivec2 resolution;
+	vec3 position;
+	vec3 direction;
+	vec3 color;
 
-	mat4 projMatrix;
-	mat4 modelMatrix;
+	float radius;
 
-	u32 fbo;
-	u32 shadowMap;
-
-	static Shader shadowMapShader;
+	Framebuffer2D shadowFbo;
 };
 
 #endif

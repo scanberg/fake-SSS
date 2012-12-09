@@ -50,12 +50,14 @@ namespace glen
 
 		logErrorsGL();
 
-		/*GLenum err = glewInit();
+		#ifndef __APPLE__
+		GLenum err = glewInit();
 		if (GLEW_OK != err)
 		{
 			logError("GLEW init error");
 			return false;
-		}*/
+		}
+		#endif
 
 		logNote("Successfully created OpenGL-window, version %i.%i",
 	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR),

@@ -6,62 +6,60 @@
 #include <cassert>
 #include <string>
 
-namespace glen
+class Geometry
 {
-    class Geometry
+public:
+    /** Structure of Vertex used in Geometry **/
+    typedef struct
     {
-    public:
-        /** Structure of Vertex used in Geometry **/
-        typedef struct
-        {
-            vec3 position;
-            vec3 normal;
-            vec2 texCoord;
-        }sVertex;
+        vec3 position;
+        vec3 normal;
+        vec2 texCoord;
+    }sVertex;
 
-        Geometry();
-        ~Geometry();
+    Geometry();
+    ~Geometry();
 
-        /** GET functions **/
-        u32 getVertexSize();
-        u32 getTriangleSize();
+    /** GET functions **/
+    u32 getVertexSize();
+    u32 getTriangleSize();
 
-        const vec3 &getVertexPosition(const u32 &vertexIndex) const;
-        const vec3 &getVertexNormal(const u32 &vertexIndex) const;
-        const vec2 &getVertexTextCoord(const u32 &vertexIndex) const;
+    const vec3 &getVertexPosition(const u32 &vertexIndex) const;
+    const vec3 &getVertexNormal(const u32 &vertexIndex) const;
+    const vec2 &getVertexTextCoord(const u32 &vertexIndex) const;
 
-        const uvec3 &getTriangleIndices(const u32 &triangleIndex) const;
-        const vec3 &getTrianglePoint(const u32 &triangleIndex, const i32 &point) const;
+    const uvec3 &getTriangleIndices(const u32 &triangleIndex) const;
+    const vec3 &getTrianglePoint(const u32 &triangleIndex, const i32 &point) const;
 
-        const f32 *getVertexData();
-        const u32 *getTriangleData();
+    const f32 *getVertexData();
+    const u32 *getTriangleData();
 
-        /** Functions **/
-        void addVertex(const sVertex &vertex);
-        void addTriangle(const uvec3 &triangle);
-        const Geometry& addGeometry(const Geometry &geometry);
+    /** Functions **/
+    void addVertex(const sVertex &vertex);
+    void addTriangle(const uvec3 &triangle);
+    const Geometry& addGeometry(const Geometry &geometry);
 
-        bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint texLoc=2);
-        bool createDynamicBuffers();
-        inline bool existOnGpu() { return glIsVertexArray(vao); }
-        bool updateBuffers();
+    bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint texLoc=2);
+    bool createDynamicBuffers();
+    inline bool existOnGpu() { return glIsVertexArray(vao); }
+    bool updateBuffers();
 
-        void destroyBuffers();
+    void destroyBuffers();
 
-        void calculateNormals();
-        void clear();
+    void calculateNormals();
+    void clear();
 
-        void draw();
+    void draw();
 
-    private:
-        friend int loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale );
+private:
+    friend bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale );
 
-        u32 vao;
-        u32 vbo_vertex;
-        u32 vbo_triangle;
+    u32 vao;
+    u32 vbo_vertex;
+    u32 vbo_triangle;
 
-        std::vector<sVertex> vertices;
-        std::vector<uvec3> triangles;
-    };
-}
+    std::vector<sVertex> vertices;
+    std::vector<uvec3> triangles;
+};
+    
 #endif
