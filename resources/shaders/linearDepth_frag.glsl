@@ -1,10 +1,10 @@
 #version 150
  
 precision highp float; // needed only for version 1.30
-
-out vec4 outFrag;
+ 
+in float Depth;
  
 void main(void)
 {
-	outFrag = vec4(0);
+	gl_FragDepth = Depth;
 }

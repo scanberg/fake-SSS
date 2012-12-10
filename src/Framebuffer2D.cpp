@@ -12,6 +12,8 @@ Framebuffer2D::Framebuffer2D(int numAuxBuffers)
 
     if(auxBuffersSize > 0)
         auxHandle = new unsigned int[auxBuffersSize];
+
+    logErrorsGL();
     
     glGenFramebuffers(1, &fboHandle);
 

@@ -59,6 +59,8 @@ namespace glen
 		}
 		#endif
 
+		logErrorsGL();
+
 		logNote("Successfully created OpenGL-window, version %i.%i",
 	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR),
 	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR));

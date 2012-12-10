@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "Log.h"
 #include "Framebuffer2D.h"
+#include "Spotlight.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -36,21 +37,31 @@ int main()
     int timeLoc;
     int textureLoc;
 
-    // GLuint testTexture = 0;
+    GLuint testTexture = 0;
 
     glen::Camera cam;
     vec3 lookPos(0,2,0);
+
+    Spotlight light0;
+    light0.setPosition(vec3(0,2,10));
+    light0.setDirection(vec3(0,0,-1));
+
+
 
     cam.setPosition(0,10,10);
     cam.lookAt(&lookPos);
 
     mat4 modelMatrix, modelViewMatrix;
 
+
+
     Framebuffer2D fbod(0);
+
     fbod.attachBuffer(FBO_DEPTH, 640, 480, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE);
 
     // createFBO();
 
+    Shader linearDepthShader("resources/shaders/linearDepth_vert.glsl","resources/shaders/linearDepth_frag.glsl");
     Shader depthShader("resources/shaders/depth_vert.glsl","resources/shaders/depth_frag.glsl");
     Shader skinShader("resources/shaders/skin_vert.glsl", "resources/shaders/skin_frag.glsl");
     Shader basicShader("resources/shaders/basic_vert.glsl", "resources/shaders/basic_frag.glsl");
@@ -80,7 +91,7 @@ int main()
     glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
 
-    //makeloadTexture("resources/textures/texture.tga", testTexture);
+    loadTexture("resources/textures/texture.tga", testTexture);
     glBindTexture(GL_TEXTURE_2D, fbod.getBufferHandle(FBO_DEPTH));
     // glBindTexture(GL_TEXTURE_2D, depthMap);
 
@@ -91,7 +102,7 @@ int main()
         setupModelMatrix(modelMatrix);
         modelViewMatrix = cam.getViewMatrix() * modelMatrix;
 
-        depthShader.bind();
+        linearDepthShader.bind();
 
         //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -101,8 +112,8 @@ int main()
         glCullFace(GL_FRONT);
         glDepthFunc(GL_LESS);
 
-        glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
-        glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
+        glUniformMatrix4fv(linearDepthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+        glUniformMatrix4fv(linearDepthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
 
         // first pass, write linear depth of the back-faces.
         bunny.draw();
@@ -136,10 +147,36 @@ int main()
 
         skinShader.unbind();
 
+        glBindTexture(GL_TEXTURE_2D, light0.getShadowMap());
+        //glBindTexture(GL_TEXTURE_2D, fbod.getBufferHandle(FBO_DEPTH));
+        //glBindTexture(GL_TEXTURE_2D, testTexture);
+
+        //linearDepthShader.bind();
+        depthShader.bind();
+        light0.setup();
+        light0.bindFbo();
+
+        glClearDepth(1.0);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        modelViewMatrix = light0.getViewMatrix() * modelMatrix;
+
+        glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+        glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(light0.getProjMatrix()));
+
+        bunny.draw();
+
+        light0.unbindFbo();
+        //linearDepthShader.unbind();
+        depthShader.unbind();
+
         basicShader.bind();
 
-        fsquad.draw();
+        textureLoc = basicShader.getUniformLocation("texture0");
+        if(textureLoc>-1)
+            glUniform1i(textureLoc, 0);
 
+        fsquad.draw();
         basicShader.unbind();
 
         if(glfwGetKey(GLFW_KEY_SPACE))
@@ -177,6 +214,8 @@ void setupModelMatrix(mat4 &mat)
 
     mat = glm::rotate(mat4(), rotAngle.y, vec3(1,0,0));
     mat = glm::rotate(mat, rotAngle.x, vec3(0,1,0));
+
+    //mat = glm::lookAt(vec3(0,0,10), vec3(0,0,0), vec3(0,1,0));
 
 }
 
