@@ -123,7 +123,7 @@ const float n = 0.1;
 
 float linearizeDepth(sampler2D tex, vec2 tc)
 {
-  return (2.0 * n) / (f + n - texture2D( tex, tc ).r * (f - n));
+  return (2.0 * n) / (f + n - texture( tex, tc ).r * (f - n));
 }
  
 void main(void)

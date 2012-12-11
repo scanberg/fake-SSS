@@ -15,12 +15,12 @@ public:
 
 	void setup();
 
-	void setPosition(vec3 pos) { position = vec4(pos, position.w); }
-	void setDirection(vec3 dir) { direction = vec4(dir, direction.w); }
+	void setPosition(vec3 pos) { position.x = pos.x; position.y = pos.y; position.z = pos.z; calcViewMatrix(); }
+	void setDirection(vec3 dir) { direction.x = dir.x; direction.y = dir.y; direction.z = dir.z; calcViewMatrix(); }
 	void setColor(vec3 col) { color = vec4(col,color.w); }
 
-	void setNear(float near) { position.w = near; }
-	void setFar(float far) { direction.w = far; }
+	void setNear(float near) { position.w = near; calcProjMatrix(); }
+	void setFar(float far) { direction.w = far; calcProjMatrix(); }
 	void setSpotExponent(float spotexp) { direction.w = spotexp; }
 
 	vec3 getPosition() { return vec3(position); }
@@ -35,23 +35,24 @@ public:
 
 	const mat4 &getViewMatrix() { return viewMatrix; }
 	const mat4 &getProjMatrix() { return projMatrix; }
-	const mat4 &getModelMatrix() { return modelMatrix; }
 
-	const mat4 &getBiasProjModelMatrix() { return biasProjModelMatrix; }
+	const mat4 &getTextureToWorldMatrix() { return textureToWorldMatrix; }
 
 private:
+	void calcProjMatrix();
+	void calcViewMatrix();
+	void calcTextureToWorldMatrix();
+
 	int width, height;
+	float fov;
 
 	// Pack data to reduce strain on GPU-bus
 	vec4 position;	// near-value packed in w
 	vec4 direction;	// far-value packed in w
 	vec4 color;		// spotexponent packed in w
 
-	float fov;
-
-	mat4 biasProjModelMatrix;
+	mat4 textureToWorldMatrix;
 	mat4 viewMatrix;
-	mat4 modelMatrix;
 	mat4 projMatrix;
 
 	Framebuffer2D *depthFbo;

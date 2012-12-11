@@ -43,21 +43,17 @@ int main()
     vec3 lookPos(0,2,0);
 
     Spotlight light0;
-    light0.setPosition(vec3(0,2,10));
-    light0.setDirection(vec3(0,0,-1));
-
-
+    light0.setPosition(vec3(0,20,4));
+    light0.setDirection(vec3(0,-1,-0.2));
 
     cam.setPosition(0,10,10);
     cam.lookAt(&lookPos);
 
     mat4 modelMatrix, modelViewMatrix;
+    mat4 lightToViewMatrix;
 
-
-
-    Framebuffer2D fbod(0);
-
-    fbod.attachBuffer(FBO_DEPTH, 640, 480, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE);
+    Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE);
 
     // createFBO();
 
@@ -65,6 +61,7 @@ int main()
     Shader depthShader("resources/shaders/depth_vert.glsl","resources/shaders/depth_frag.glsl");
     Shader skinShader("resources/shaders/skin_vert.glsl", "resources/shaders/skin_frag.glsl");
     Shader basicShader("resources/shaders/basic_vert.glsl", "resources/shaders/basic_frag.glsl");
+    Shader shadowShader("resources/shaders/shadow_vert.glsl", "resources/shaders/shadow_frag.glsl");
 
     Geometry bunny;
     loadObj(bunny,"resources/meshes/bunny.obj",0.8f);
@@ -92,7 +89,7 @@ int main()
     glActiveTexture(GL_TEXTURE0);
 
     loadTexture("resources/textures/texture.tga", testTexture);
-    glBindTexture(GL_TEXTURE_2D, fbod.getBufferHandle(FBO_DEPTH));
+    glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
     // glBindTexture(GL_TEXTURE_2D, depthMap);
 
     while(true)
@@ -106,7 +103,7 @@ int main()
 
         //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-        fbod.bind();
+        fboBack.bind();
         glClearDepth(1.0);
         glClear(GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_FRONT);
@@ -118,7 +115,7 @@ int main()
         // first pass, write linear depth of the back-faces.
         bunny.draw();
 
-        fbod.unbind();
+        fboBack.unbind();
 
         //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -148,7 +145,7 @@ int main()
         skinShader.unbind();
 
         glBindTexture(GL_TEXTURE_2D, light0.getShadowMap());
-        //glBindTexture(GL_TEXTURE_2D, fbod.getBufferHandle(FBO_DEPTH));
+        //glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
         //glBindTexture(GL_TEXTURE_2D, testTexture);
 
         //linearDepthShader.bind();
@@ -170,17 +167,30 @@ int main()
         //linearDepthShader.unbind();
         depthShader.unbind();
 
-        basicShader.bind();
+        // Draw to screen
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        shadowShader.bind();
 
-        textureLoc = basicShader.getUniformLocation("texture0");
+        textureLoc = shadowShader.getUniformLocation("texture0");
         if(textureLoc>-1)
             glUniform1i(textureLoc, 0);
 
-        fsquad.draw();
-        basicShader.unbind();
+        modelViewMatrix = cam.getViewMatrix() * modelMatrix;
+        lightToViewMatrix = cam.getProjMatrix() * modelViewMatrix * light0.getTextureToWorldMatrix();
 
-        if(glfwGetKey(GLFW_KEY_SPACE))
-            skinShader.loadAndCompile();
+        int lightMatrixLoc = shadowShader.getUniformLocation("lightToViewMatrix");
+
+        if(lightMatrixLoc>-1)
+            glUniformMatrix4fv(lightMatrixLoc, 1, GL_FALSE, glm::value_ptr(lightToViewMatrix));
+
+        glUniformMatrix4fv(shadowShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+        glUniformMatrix4fv(shadowShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
+
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        //fsquad.draw();
+        bunny.draw();
+
+        shadowShader.unbind();
 
         engine->swapBuffers();
         if(!glfwGetWindowParam(GLFW_OPENED) || glfwGetKey(GLFW_KEY_ESC) || glfwGetKey('Q'))

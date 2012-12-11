@@ -1,19 +1,21 @@
 #ifndef FRAMEBUFFER2D_H
 #define FRAMEBUFFER2D_H
 
-#ifdef __APPLE__
-	#define GLFW_INCLUDE_GL3
-	#define GLFW_NO_GLU
-#else
-	#include <GL/glew.h>
-#endif
+// #ifdef __APPLE__
+// 	#define GLFW_INCLUDE_GL3
+// 	#define GLFW_NO_GLU
+// #else
+// 	#include <GL/glew.h>
+// #endif
 
-#include <GL/glfw.h>
+// #include <GL/glfw.h>
+
+#include "Types.h"
 
 class Framebuffer2D
 {
 public:
-	Framebuffer2D(int numAuxBuffers = 1);
+	Framebuffer2D(int width, int height, int numAuxBuffers = 1);
 	~Framebuffer2D();
 
 /**
@@ -25,7 +27,7 @@ public:
  *
  * @return bool Returns true if the buffer was assigned successfully.
  */
-	bool attachBuffer(	unsigned char buffer, int width, int height,
+	bool attachBuffer(	unsigned char buffer,
 						GLint internalFormat = 		GL_RGBA,
 						GLint format = 				GL_RGBA,
 						GLint type = 				GL_UNSIGNED_INT,
@@ -48,10 +50,7 @@ private:
 	unsigned int *getTextureHandle(unsigned char buffer);
 	GLenum getGLAttachment(unsigned char buffer);
 
-	int *auxWidth;
-	int *auxHeight;
-	int depthWidth;
-	int depthHeight;
+	int width, height;
 
 	int auxBuffersSize;
 	unsigned int *auxHandle;

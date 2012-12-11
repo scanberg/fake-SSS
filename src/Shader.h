@@ -1,14 +1,16 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#ifdef __APPLE__
+/*#ifdef __APPLE__
     #define GLFW_INCLUDE_GL3
     #define GLFW_NO_GLU    
 #else
     #include <GL/glew.h>
 #endif
 
-#include <GL/glfw.h>
+#include <GL/glfw.h>*/
+
+#include "Types.h"
 
 class Shader
 {

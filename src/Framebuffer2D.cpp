@@ -5,8 +5,10 @@
 
 #define clamp(x,min,max) (x < min) ? min : ( (x > max) ? max : x )
 
-Framebuffer2D::Framebuffer2D(int numAuxBuffers)
+Framebuffer2D::Framebuffer2D(int width, int height, int numAuxBuffers)
 {
+    this->width = width;
+    this->height = height;
     auxHandle = NULL;
 	auxBuffersSize = clamp(numAuxBuffers, 0, MAX_AUX_BUFFERS);
 
@@ -35,7 +37,7 @@ Framebuffer2D::~Framebuffer2D()
         delete[] auxHandle;
 }
 
-bool Framebuffer2D::attachBuffer(   unsigned char buffer, int width, int height,
+bool Framebuffer2D::attachBuffer(   unsigned char buffer,
                                     GLint internalFormat, GLint format, GLint type,
                                     GLint textureMinFilter, GLint textureMagFilter,
                                     GLint textureWrapS, GLint textureWrapT)
@@ -105,6 +107,7 @@ void Framebuffer2D::destroyBuffers(unsigned char bufferBit)
 void Framebuffer2D::bind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
+    glViewport(0,0,width, height);
 }
 
 void Framebuffer2D::unbind()

@@ -1,12 +1,12 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#ifdef __APPLE__
-    #define GLFW_INCLUDE_GL3
-    #define GLFW_NO_GLU    
-#else
+//#ifdef __APPLE__
+    //#define GLFW_INCLUDE_GL3
+    //#define GLFW_NO_GLU    
+//#else
     #include <GL/glew.h>
-#endif
+//#endif
 
 #include <GL/glfw.h>
 

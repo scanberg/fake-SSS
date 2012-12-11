@@ -18,8 +18,8 @@ float linearizeDepth(float depth)
 
 void main(void)
 {
-	vec4 textureColor = vec4(texture2D(texture0, TexCoord).r);
-	//vec4 textureColor = vec4( linearizeDepth( texture2D(texture0, TexCoord).r ) );
+	//vec4 textureColor = vec4(texture(texture0, TexCoord).r);
+	vec4 textureColor = vec4( linearizeDepth( texture(texture0, TexCoord).r ) );
 
 	out_Color = textureColor;
 }

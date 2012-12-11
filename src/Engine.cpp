@@ -50,14 +50,14 @@ namespace glen
 
 		logErrorsGL();
 
-		#ifndef __APPLE__
-		GLenum err = glewInit();
-		if (GLEW_OK != err)
+		//#ifndef __APPLE__
+		glewExperimental = GL_TRUE;
+		if (GLEW_OK != glewInit())
 		{
 			logError("GLEW init error");
 			return false;
 		}
-		#endif
+		//#endif
 
 		logErrorsGL();
 
@@ -69,7 +69,7 @@ namespace glen
 
 		glEnable(GL_DEPTH_TEST);
     	glEnable(GL_CULL_FACE);
-    	glfwSwapInterval(0);
+    	glfwSwapInterval(1);
 
 		return true;
 	}
