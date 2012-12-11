@@ -8,29 +8,33 @@ uniform sampler2D texture0;
 
 in vec3 Normal;
 in vec3 ViewDir;
+in vec4 ShadowProj;
 
 out vec4 out_Color;
-
-const float n = 0.1;
-const float f = 50.0;
-
-float linearizeDepth(sampler2D tex, vec2 tc)
-{
-  return (2.0 * n) / (f + n - texture( tex, tc ).r * (f - n));
-}
-
-const int width 512;
-const int height 512;
  
 void main(void)
 {
-  float depth = -ViewDir.z;
+	//vec4 shadowCoord = ShadowProj / ShadowProj.w;
+	//shadowCoord.z += 0.0005;
+
+	//float lightDist = texture(texture0, shadowCoord.st).z;
+
+	float shadow = 1.0;
+
+	if(ShadowProj.w > 0.0)
+	{
+		shadow = textureProj(texture0, ShadowProj);
+		//shadow = lightDist < shadowCoord.z ? 0.2 : 1.0;
+		//shadow = 0.2;
+	}
+
+	float depth = -ViewDir.z;
 	vec3 viewDir = normalize(ViewDir);
 	vec3 normal = normalize(Normal);
 
 	vec2 texCoord = gl_FragCoord.xy / vec2(640,480);
 
-  vec3 light = vec3( 1,0,0 );
+	vec3 light = vec3( shadow );
 
 	out_Color = vec4(light,1.0);
 }

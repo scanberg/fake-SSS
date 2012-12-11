@@ -15,12 +15,12 @@ public:
 
 	void setup();
 
-	void setPosition(vec3 pos) { position.x = pos.x; position.y = pos.y; position.z = pos.z; calcViewMatrix(); }
-	void setDirection(vec3 dir) { direction.x = dir.x; direction.y = dir.y; direction.z = dir.z; calcViewMatrix(); }
+	void setPosition(vec3 pos) { position.x = pos.x; position.y = pos.y; position.z = pos.z; }
+	void setDirection(vec3 dir) { direction.x = dir.x; direction.y = dir.y; direction.z = dir.z; }
 	void setColor(vec3 col) { color = vec4(col,color.w); }
 
-	void setNear(float near) { position.w = near; calcProjMatrix(); }
-	void setFar(float far) { direction.w = far; calcProjMatrix(); }
+	void setNear(float near) { position.w = near; }
+	void setFar(float far) { direction.w = far; }
 	void setSpotExponent(float spotexp) { direction.w = spotexp; }
 
 	vec3 getPosition() { return vec3(position); }
@@ -36,12 +36,9 @@ public:
 	const mat4 &getViewMatrix() { return viewMatrix; }
 	const mat4 &getProjMatrix() { return projMatrix; }
 
-	const mat4 &getTextureToWorldMatrix() { return textureToWorldMatrix; }
+	const mat4 &getTextureMatrix() { return textureMatrix; }
 
 private:
-	void calcProjMatrix();
-	void calcViewMatrix();
-	void calcTextureToWorldMatrix();
 
 	int width, height;
 	float fov;
@@ -51,9 +48,9 @@ private:
 	vec4 direction;	// far-value packed in w
 	vec4 color;		// spotexponent packed in w
 
-	mat4 textureToWorldMatrix;
 	mat4 viewMatrix;
 	mat4 projMatrix;
+	mat4 textureMatrix;
 
 	Framebuffer2D *depthFbo;
 };

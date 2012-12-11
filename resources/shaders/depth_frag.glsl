@@ -6,5 +6,5 @@ out vec4 outFrag;
  
 void main(void)
 {
-	outFrag = vec4(0);
+	outFrag = vec4(1.0);
 }

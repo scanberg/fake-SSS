@@ -94,61 +94,10 @@ int main()
 
     while(true)
     {
-        cam.setup();
-
         setupModelMatrix(modelMatrix);
-        modelViewMatrix = cam.getViewMatrix() * modelMatrix;
 
-        linearDepthShader.bind();
+        // LIGHT PASS
 
-        //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-        fboBack.bind();
-        glClearDepth(1.0);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glCullFace(GL_FRONT);
-        glDepthFunc(GL_LESS);
-
-        glUniformMatrix4fv(linearDepthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
-        glUniformMatrix4fv(linearDepthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
-
-        // first pass, write linear depth of the back-faces.
-        bunny.draw();
-
-        fboBack.unbind();
-
-        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        glClearDepth(1.0);
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-        glCullFace(GL_BACK);
-        glDepthFunc(GL_LESS);
-
-        skinShader.bind();
-
-        if(timeLoc > -1)
-        {
-            time = glfwGetTime();
-            glUniform1f(timeLoc, time);
-        }
-
-        if(textureLoc > -1)
-        {
-            glUniform1i(textureLoc, 0);
-        }
-
-        glUniformMatrix4fv(skinShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
-        glUniformMatrix4fv(skinShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
-
-        //bunny.draw();
-
-        skinShader.unbind();
-
-        glBindTexture(GL_TEXTURE_2D, light0.getShadowMap());
-        //glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
-        //glBindTexture(GL_TEXTURE_2D, testTexture);
-
-        //linearDepthShader.bind();
         depthShader.bind();
         light0.setup();
         light0.bindFbo();
@@ -164,33 +113,84 @@ int main()
         bunny.draw();
 
         light0.unbindFbo();
-        //linearDepthShader.unbind();
         depthShader.unbind();
 
-        // Draw to screen
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // END LIGHT PASS
+
+        cam.setup();
+        modelViewMatrix = cam.getViewMatrix() * modelMatrix;
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+        // BACK PASS
+
+        // linearDepthShader.bind();
+
+        // fboBack.bind();
+        // glClearDepth(1.0);
+        // glClear(GL_DEPTH_BUFFER_BIT);
+        // glCullFace(GL_FRONT);
+        // glDepthFunc(GL_LESS);
+
+        // glUniformMatrix4fv(linearDepthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+        // glUniformMatrix4fv(linearDepthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
+
+        // bunny.draw();
+
+        // fboBack.unbind();
+
+        // END BACK PASS
+
+        glBindTexture(GL_TEXTURE_2D, light0.getShadowMap());
+        // FRONT PASS
+
+        glClearDepth(1.0);
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        glCullFace(GL_BACK);
+        glDepthFunc(GL_LESS);
+
         shadowShader.bind();
 
         textureLoc = shadowShader.getUniformLocation("texture0");
-        if(textureLoc>-1)
+        if(textureLoc > -1)
             glUniform1i(textureLoc, 0);
 
-        modelViewMatrix = cam.getViewMatrix() * modelMatrix;
-        lightToViewMatrix = cam.getProjMatrix() * modelViewMatrix * light0.getTextureToWorldMatrix();
-
-        int lightMatrixLoc = shadowShader.getUniformLocation("lightToViewMatrix");
-
-        if(lightMatrixLoc>-1)
-            glUniformMatrix4fv(lightMatrixLoc, 1, GL_FALSE, glm::value_ptr(lightToViewMatrix));
+        int textureMatrixLoc = shadowShader.getUniformLocation("textureMatrix");
+        if(textureMatrixLoc > -1)
+            glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(light0.getTextureMatrix()));
 
         glUniformMatrix4fv(shadowShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
         glUniformMatrix4fv(shadowShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
 
-        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-        //fsquad.draw();
         bunny.draw();
 
         shadowShader.unbind();
+
+        // END FRONT PASS
+
+        //glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
+        //glBindTexture(GL_TEXTURE_2D, testTexture);
+
+        // Draw to screen
+        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // shadowShader.bind();
+
+        // textureLoc = shadowShader.getUniformLocation("texture0");
+        // if(textureLoc>-1)
+        //     glUniform1i(textureLoc, 0);
+
+        // int lightMatrixLoc = shadowShader.getUniformLocation("lightToViewMatrix");
+
+        // if(lightMatrixLoc>-1)
+        //     glUniformMatrix4fv(lightMatrixLoc, 1, GL_FALSE, glm::value_ptr(lightToViewMatrix));
+
+        // glUniformMatrix4fv(shadowShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+        // glUniformMatrix4fv(shadowShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
+
+        // glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        // //fsquad.draw();
+        // //bunny.draw();
+
+        // shadowShader.unbind();
 
         engine->swapBuffers();
         if(!glfwGetWindowParam(GLFW_OPENED) || glfwGetKey(GLFW_KEY_ESC) || glfwGetKey('Q'))

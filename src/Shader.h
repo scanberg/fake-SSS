@@ -31,7 +31,7 @@ private:
      */
      
     GLint positionLoc, normalLoc, texCoordLoc;
-    GLint viewMatrixLoc, projMatrixLoc;
+    GLint modelMatrixLoc, viewMatrixLoc, projMatrixLoc;
 
     char *vertexFile, *fragmentFile;
     bool compiled;
@@ -56,6 +56,7 @@ public:
     GLint getNormalLocation() { return normalLoc; }
     GLint getTexCoordLocation() { return texCoordLoc; }
 
+    GLint getModelMatrixLocation() { return modelMatrixLoc; }
     GLint getViewMatrixLocation() { return viewMatrixLoc; }
     GLint getProjMatrixLocation() { return projMatrixLoc; }
 

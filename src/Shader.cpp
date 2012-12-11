@@ -209,6 +209,7 @@ bool Shader::loadAndCompile()
  
     projMatrixLoc = glGetUniformLocation(program, "projMatrix");
     viewMatrixLoc = glGetUniformLocation(program, "viewMatrix");
+    modelMatrixLoc = glGetUniformLocation(program, "modelMatrix");
 
     compiled = true;
  

@@ -1,9 +1,14 @@
 #include "Spotlight.h"
 #include "Log.h"
 
+static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
+								0.0, 0.5, 0.0, 0.0,
+								0.0, 0.0, 0.5, 0.0,
+								0.5, 0.5, 0.5, 1.0);
+
 Spotlight::Spotlight()
 {
-	width = height = 256;
+	width = height = 512;
 	fov = 45.0;
 	position = vec4(0,0,0,0.1);
 	direction = vec4(0,0,-1,50.0);
@@ -37,7 +42,15 @@ void Spotlight::unbindFbo()
 
 void Spotlight::setup()
 {
+	float ratio = (float)width / (float)height;
+	projMatrix = glm::perspective(fov, ratio, getNear(), getFar());
 
+	vec3 pos = getPosition();
+	vec3 dir = getDirection();
+
+	viewMatrix = glm::lookAt(pos, pos+dir, vec3(0,1,0));
+
+	textureMatrix = biasMatrix * projMatrix * viewMatrix;
 }
 
 unsigned int Spotlight::getShadowMap()
@@ -46,27 +59,4 @@ unsigned int Spotlight::getShadowMap()
 		return depthFbo->getBufferHandle(FBO_DEPTH);
 
 	return 0;
-}
-
-void Spotlight::calcProjMatrix()
-{
-	float ratio = (float)width / (float)height;
-	projMatrix = glm::perspective(fov, ratio, getNear(), getFar());
-
-	calcTextureToWorldMatrix();
-}
-
-void Spotlight::calcViewMatrix()
-{
-	vec3 pos = getPosition();
-	vec3 dir = getDirection();
-
-	viewMatrix = glm::lookAt(pos, pos+dir, vec3(0,1,0));
-
-	calcTextureToWorldMatrix();
-}
-
-void Spotlight::calcTextureToWorldMatrix()
-{
-	textureToWorldMatrix = glm::inverse(projMatrix * viewMatrix);
 }
