@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <vector>
 #include "Types.h"
 #include "Geometry.h"
 #include "ObjLoader.h"
@@ -17,6 +18,7 @@ void modifyCamera(Camera *cam);
 // void createFBO();
 // void destroyFBO();
 void loadTexture(const char *filename, GLuint texID);
+void setLightUniforms();
 
 void drawScene();
 
@@ -24,6 +26,7 @@ GLuint fbo;
 GLuint depthMap;
 Geometry bunny;
 Geometry plane;
+std::vector<Spotlight> lights;
 
 int main()
 {
@@ -195,6 +198,10 @@ int main()
         if(lightFovLoc > -1)
             glUniform1f(lightFovLoc, light0.getFov());
 
+        int lightInnerAngleLoc = shadowShader.getUniformLocation("lightInnerAngle");
+        if(lightInnerAngleLoc > -1)
+            glUniform1f(lightInnerAngleLoc, light0.getInnerAngle());
+
         glUniformMatrix4fv(shadowShader.getModelMatrixLocation(), 1, false, glm::value_ptr(modelMatrix));
         glUniformMatrix4fv(shadowShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
         glUniformMatrix4fv(shadowShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
@@ -297,4 +304,9 @@ void loadTexture(const char *filename, GLuint texID) {
     glfwFreeImage(&img); // Clean up the malloc()'ed data pointer
 
     glBindTexture( GL_TEXTURE_2D, 0 );
+}
+
+void setLightUniforms()
+{
+
 }

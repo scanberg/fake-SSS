@@ -22,7 +22,7 @@ public:
 	void setInnerAngle(float angle) { innerAngle = glm::clamp(angle, 0.0f, fov); }
 
 	void setPosition(vec3 pos) { position.x = pos.x; position.y = pos.y; position.z = pos.z; }
-	void setDirection(vec3 dir) { direction.x = dir.x; direction.y = dir.y; direction.z = dir.z; }
+	void setDirection(vec3 dir) { direction = vec4(glm::normalize(dir), direction.w); }
 	void setLookAt(vec3 pos) { direction = vec4(glm::normalize(pos-getPosition()), direction.w); }
 	void setColor(vec3 col) { color = vec4(col,color.w); }
 
@@ -31,6 +31,7 @@ public:
 	void setSpotExponent(float spotexp) { direction.w = spotexp; }
 
 	float getFov() { return fov; }
+	float getInnerAngle() { return innerAngle; }
 
 	vec3 getPosition() { return vec3(position); }
 	vec3 getDirection() { return vec3(direction); }
