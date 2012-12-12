@@ -35,11 +35,15 @@ private:
 
     char *vertexFile, *fragmentFile;
     bool compiled;
+
+    static Shader *boundShader;
     
 public:
     Shader();
     Shader(const char *vertFile, const char *fragFile);
     ~Shader();
+
+    static Shader *getBoundShader() { return boundShader; }
 
     bool loadAndCompile();
 

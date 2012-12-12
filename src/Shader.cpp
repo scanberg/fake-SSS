@@ -7,6 +7,8 @@
 
 #define BUFFER_SIZE 2048
 
+Shader *Shader::boundShader = NULL;
+
 /**
  * readTextFile - reads a simple textfile specified by filename,
  * if everything is ok, a pointer to a null-terminated string is returned,
@@ -229,11 +231,15 @@ GLint Shader::getUniformLocation(const char *uni)
 
 void Shader::bind()
 {
-    if(compiled)
-        glUseProgram(program);
+    if(!compiled)
+        return;
+
+    glUseProgram(program);
+    boundShader = this;
 }
 
 void Shader::unbind()
 {
     glUseProgram(0);
+    boundShader = NULL;
 }

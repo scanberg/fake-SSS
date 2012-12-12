@@ -13,13 +13,17 @@
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
-void setupModelMatrix(mat4 &mat);
+void modifyCamera(Camera *cam);
 // void createFBO();
 // void destroyFBO();
 void loadTexture(const char *filename, GLuint texID);
 
+void drawScene();
+
 GLuint fbo;
 GLuint depthMap;
+Geometry bunny;
+Geometry plane;
 
 int main()
 {
@@ -33,24 +37,26 @@ int main()
         return 0;
     }
 
-    float time;
+    //float time;
     int timeLoc;
     int textureLoc;
 
     GLuint testTexture = 0;
 
-    glen::Camera cam;
+    Camera cam;
     vec3 lookPos(0,2,0);
 
     Spotlight light0;
-    light0.setPosition(vec3(0,20,4));
-    light0.setDirection(vec3(0,-1,-0.2));
+    light0.setPosition(vec3(0,10,-10));
+    //light0.setDirection(vec3(0,-1,-0.5));
+    light0.setLookAt(vec3(0));
+    light0.setFov(45.0);
 
     cam.setPosition(0,10,10);
     cam.lookAt(&lookPos);
 
-    mat4 modelMatrix, modelViewMatrix;
-    mat4 lightToViewMatrix;
+    mat4 modelMatrix(1.0), modelViewMatrix(1.0);
+    mat4 textureMatrix;
 
     Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE);
@@ -63,8 +69,7 @@ int main()
     Shader basicShader("resources/shaders/basic_vert.glsl", "resources/shaders/basic_frag.glsl");
     Shader shadowShader("resources/shaders/shadow_vert.glsl", "resources/shaders/shadow_frag.glsl");
 
-    Geometry bunny;
-    loadObj(bunny,"resources/meshes/bunny.obj",0.8f);
+    loadObj(bunny,"resources/meshes/bunny.obj",0.4f);
     bunny.createStaticBuffers();
 
     Geometry fsquad;
@@ -80,7 +85,20 @@ int main()
 
     fsquad.createStaticBuffers();
 
-    timeLoc = skinShader.getUniformLocation("time"); 
+    #define PLANESIZE 10
+
+    v.normal = vec3(0,1,0);
+    v.position = vec3(-PLANESIZE,0,PLANESIZE);    v.texCoord = vec2(0,0); plane.addVertex(v);
+    v.position = vec3(PLANESIZE,0,PLANESIZE);     v.texCoord = vec2(1,0); plane.addVertex(v);
+    v.position = vec3(PLANESIZE,0,-PLANESIZE);    v.texCoord = vec2(1,1); plane.addVertex(v);
+    v.position = vec3(-PLANESIZE,0,-PLANESIZE);   v.texCoord = vec2(0,1); plane.addVertex(v);
+
+    plane.addTriangle(uvec3(0,1,2));
+    plane.addTriangle(uvec3(0,2,3));
+
+    plane.createStaticBuffers();
+
+    timeLoc = skinShader.getUniformLocation("time");
     textureLoc = skinShader.getUniformLocation("texture0");
 
     glClearColor(1.0,1.0,1.0,1.0);
@@ -94,8 +112,6 @@ int main()
 
     while(true)
     {
-        setupModelMatrix(modelMatrix);
-
         // LIGHT PASS
 
         depthShader.bind();
@@ -110,13 +126,15 @@ int main()
         glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
         glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(light0.getProjMatrix()));
 
-        bunny.draw();
+        //bunny.draw();
+        drawScene();
 
         light0.unbindFbo();
         depthShader.unbind();
 
         // END LIGHT PASS
 
+        modifyCamera(&cam);
         cam.setup();
         modelViewMatrix = cam.getViewMatrix() * modelMatrix;
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -156,12 +174,33 @@ int main()
 
         int textureMatrixLoc = shadowShader.getUniformLocation("textureMatrix");
         if(textureMatrixLoc > -1)
-            glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(light0.getTextureMatrix()));
+        {
+            textureMatrix = light0.getTextureMatrix() * modelMatrix;
+            glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(textureMatrix));
+        }
 
-        glUniformMatrix4fv(shadowShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+        int lightPosLoc = shadowShader.getUniformLocation("lightPos");
+        if(lightPosLoc > -1)
+        {
+            glUniform3fv(lightPosLoc, 1, glm::value_ptr(light0.getPosition()));
+        }
+
+        int lightDirLoc = shadowShader.getUniformLocation("lightDir");
+        if(lightDirLoc > -1)
+        {
+            glUniform3fv(lightDirLoc, 1, glm::value_ptr(light0.getDirection()));
+        }
+
+        int lightFovLoc = shadowShader.getUniformLocation("lightFov");
+        if(lightFovLoc > -1)
+            glUniform1f(lightFovLoc, light0.getFov());
+
+        glUniformMatrix4fv(shadowShader.getModelMatrixLocation(), 1, false, glm::value_ptr(modelMatrix));
+        glUniformMatrix4fv(shadowShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
         glUniformMatrix4fv(shadowShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
 
-        bunny.draw();
+        //bunny.draw();
+        drawScene();
 
         shadowShader.unbind();
 
@@ -172,11 +211,11 @@ int main()
 
         // Draw to screen
         // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // shadowShader.bind();
+        basicShader.bind();
 
-        // textureLoc = shadowShader.getUniformLocation("texture0");
-        // if(textureLoc>-1)
-        //     glUniform1i(textureLoc, 0);
+        textureLoc = basicShader.getUniformLocation("texture0");
+        if(textureLoc>-1)
+            glUniform1i(textureLoc, 0);
 
         // int lightMatrixLoc = shadowShader.getUniformLocation("lightToViewMatrix");
 
@@ -187,10 +226,10 @@ int main()
         // glUniformMatrix4fv(shadowShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
 
         // glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-        // //fsquad.draw();
+        //fsquad.draw();
         // //bunny.draw();
 
-        // shadowShader.unbind();
+        basicShader.unbind();
 
         engine->swapBuffers();
         if(!glfwGetWindowParam(GLFW_OPENED) || glfwGetKey(GLFW_KEY_ESC) || glfwGetKey('Q'))
@@ -205,7 +244,7 @@ int main()
     return 0;
 }
 
-void setupModelMatrix(mat4 &mat)
+void modifyCamera(Camera *cam)
 {
     static int oldMouseX=320, oldMouseY=240;
     static vec2 rotAngle;
@@ -218,60 +257,24 @@ void setupModelMatrix(mat4 &mat)
 
     if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT))
     {
-        rotAngle += mouseMove * 0.5f;
-        rotAngle.y = glm::clamp(rotAngle.y,0.0f,90.0f);
+        rotAngle += mouseMove * 0.01f;
+        rotAngle.y = glm::clamp(rotAngle.y, 0.0f, 90.0f);
     }
 
-    mat = glm::rotate(mat4(), rotAngle.y, vec3(1,0,0));
-    mat = glm::rotate(mat, rotAngle.x, vec3(0,1,0));
+    float dist = 10;
 
-    //mat = glm::lookAt(vec3(0,0,10), vec3(0,0,0), vec3(0,1,0));
+    cam->setPosition(dist*glm::cos(rotAngle.x), 10, dist*glm::sin(rotAngle.x));
+
+    //mat = glm::rotate(mat4(), rotAngle.y, vec3(1,0,0));
+    //mat = glm::rotate(mat, rotAngle.x, vec3(0,1,0));
 
 }
 
-// void createFBO()
-// {
-//     logNote("Creating FBO");
-//     glGenTextures(1,&depthMap);
-
-//     logNote("texture generated");
-
-//     glBindTexture(GL_TEXTURE_2D, depthMap);
-//     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-//     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-//     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-//     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, WINDOW_WIDTH, WINDOW_HEIGHT, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-//     glBindTexture(GL_TEXTURE_2D, 0);
-
-//     glGenFramebuffers(1,&fbo);
-    
-//     //switch to our fbo so we can bind stuff to it
-//     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-//     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-
-//     glDrawBuffer(GL_NONE);
-//     glReadBuffer(GL_NONE);
-
-//     // check FBO status
-//     GLenum FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-//     if(FBOstatus != GL_FRAMEBUFFER_COMPLETE)
-//         printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO\n");
-    
-//     // Go back to regular frame buffer rendering
-//     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-//     logNote("Done Creating FBO");
-// }
-
-// void destroyFBO()
-// {
-//     if(fbo)
-//         glDeleteFramebuffers(1,&fbo);
-//     if(depthMap)
-//         glDeleteTextures(1,&depthMap);
-// }
+void drawScene()
+{
+    bunny.draw();
+    plane.draw();
+}
 
 /*
  * loadTexture - load 8-bit texture data from a TGA file
