@@ -33,13 +33,13 @@ void main(void)
 	vec3 L = normalize(LightDir);
 	vec3 D = normalize(lightDir);
 
-	float cos_cur_angle = dot(-L,D);
-	float cos_inner_angle = cos(toRadians(lightInnerAngle / 2.0));
-	float cos_outer_angle = cos(toRadians(lightFov / 2.0));
-	float cos_diff = cos_inner_angle - cos_outer_angle;
+	float cur_angle = dot(-L,D);
+	float inner_angle = cos(toRadians(lightInnerAngle * 0.5));
+	float outer_angle = cos(toRadians(lightFov * 0.5));
+	float diff_angle = inner_angle - outer_angle;
 
-	float spot = clamp((cos_cur_angle - cos_outer_angle) /
-					cos_diff, 0.0, 1.0);
+	float spot = clamp((cur_angle - outer_angle) /
+					diff_angle, 0.0, 1.0);
 
 	if(ShadowProj.w > 0.0)
 	{
