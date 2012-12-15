@@ -8,11 +8,12 @@ static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
 
 Spotlight::Spotlight()
 {
-	width = height = 1024;
-	fov = 45.0;
-	position = vec4(0,0,0,0.1);
-	direction = vec4(0,0,-1,100.0);
-	color = vec4(1,1,1,10.0);
+	width = height = 512;
+	near = 0.1;
+	far = 100.0;
+	position = vec4(0,0,0,45.0);
+	direction = vec4(0,0,-1,40.0);
+	color = vec4(1,1,1,100.0);
 
 	depthFbo = NULL;
 	depthFbo = new Framebuffer2D(width, height, 0);
@@ -23,7 +24,7 @@ Spotlight::Spotlight()
 
 	glBindTexture(GL_TEXTURE_2D, getShadowMap());
 
-	glTexParameteri ( GL_TEXTURE_2D , GL_TEXTURE_COMPARE_MODE , GL_COMPARE_R_TO_TEXTURE );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -49,7 +50,7 @@ void Spotlight::unbindFbo()
 void Spotlight::setup()
 {
 	float ratio = (float)width / (float)height;
-	projMatrix = glm::perspective(fov, ratio, getNear(), getFar());
+	projMatrix = glm::perspective(getOuterAngle(), ratio, getNear(), getFar());
 
 	vec3 pos = getPosition();
 	vec3 dir = getDirection();

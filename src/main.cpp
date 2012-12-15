@@ -13,6 +13,7 @@
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
+#define NUM_LIGHTS 3
 
 void modifyCamera(Camera *cam);
 // void createFBO();
@@ -26,7 +27,7 @@ GLuint fbo;
 GLuint depthMap;
 Geometry bunny;
 Geometry plane;
-std::vector<Spotlight> lights;
+std::vector<Spotlight*> lights;
 
 int main()
 {
@@ -49,11 +50,21 @@ int main()
     Camera cam;
     vec3 lookPos(0,2,0);
 
-    Spotlight light0;
-    light0.setPosition(vec3(0,10,-10));
-    //light0.setDirection(vec3(0,-1,-0.5));
-    light0.setLookAt(vec3(0));
-    light0.setFov(45.0);
+    Spotlight light[NUM_LIGHTS];
+    light[0].setPosition(vec3(0,10,-10));
+    light[0].setLookAt(vec3(0));
+    light[0].setColor(vec3(1.0,0.5,0.0));
+
+    light[1].setPosition(vec3(-7,10,-7));
+    light[1].setLookAt(vec3(0));
+    light[1].setColor(vec3(0.5,1.0,0.0));
+
+    light[2].setPosition(vec3(-7,10,-7));
+    light[2].setLookAt(vec3(0));
+    light[2].setColor(vec3(0.0,0.5,1.0));
+
+    lights.push_back(&light[0]);
+    lights.push_back(&light[1]);
 
     cam.setPosition(0,10,10);
     cam.lookAt(&lookPos);
@@ -118,21 +129,26 @@ int main()
         // LIGHT PASS
 
         depthShader.bind();
-        light0.setup();
-        light0.bindFbo();
 
-        glClearDepth(1.0);
-        glClear(GL_DEPTH_BUFFER_BIT);
+        for(int i=0; i<NUM_LIGHTS; i++)
+        {
+            light[i].setup();
+            light[i].bindFbo();
 
-        modelViewMatrix = light0.getViewMatrix() * modelMatrix;
+            glClearDepth(1.0);
+            glClear(GL_DEPTH_BUFFER_BIT);
 
-        glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
-        glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(light0.getProjMatrix()));
+            modelViewMatrix = light[i].getViewMatrix() * modelMatrix;
 
-        //bunny.draw();
-        drawScene();
+            glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+            glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(light[i].getProjMatrix()));
 
-        light0.unbindFbo();
+            //bunny.draw();
+            drawScene();
+
+            light[i].unbindFbo();
+        }
+
         depthShader.unbind();
 
         // END LIGHT PASS
@@ -161,7 +177,7 @@ int main()
 
         // END BACK PASS
 
-        glBindTexture(GL_TEXTURE_2D, light0.getShadowMap());
+        glBindTexture(GL_TEXTURE_2D, light[0].getShadowMap());
         // FRONT PASS
 
         glClearDepth(1.0);
@@ -178,29 +194,29 @@ int main()
         int textureMatrixLoc = shadowShader.getUniformLocation("textureMatrix");
         if(textureMatrixLoc > -1)
         {
-            textureMatrix = light0.getTextureMatrix() * modelMatrix;
+            textureMatrix = light[0].getTextureMatrix() * modelMatrix;
             glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(textureMatrix));
         }
 
         int lightPosLoc = shadowShader.getUniformLocation("lightPos");
         if(lightPosLoc > -1)
         {
-            glUniform3fv(lightPosLoc, 1, glm::value_ptr(light0.getPosition()));
+            glUniform3fv(lightPosLoc, 1, glm::value_ptr(light[0].getPosition()));
         }
 
         int lightDirLoc = shadowShader.getUniformLocation("lightDir");
         if(lightDirLoc > -1)
         {
-            glUniform3fv(lightDirLoc, 1, glm::value_ptr(light0.getDirection()));
+            glUniform3fv(lightDirLoc, 1, glm::value_ptr(light[0].getDirection()));
         }
 
-        int lightFovLoc = shadowShader.getUniformLocation("lightFov");
+        int lightFovLoc = shadowShader.getUniformLocation("lightOuterAngle");
         if(lightFovLoc > -1)
-            glUniform1f(lightFovLoc, light0.getFov());
+            glUniform1f(lightFovLoc, light[0].getOuterAngle());
 
         int lightInnerAngleLoc = shadowShader.getUniformLocation("lightInnerAngle");
         if(lightInnerAngleLoc > -1)
-            glUniform1f(lightInnerAngleLoc, light0.getInnerAngle());
+            glUniform1f(lightInnerAngleLoc, light[0].getInnerAngle());
 
         glUniformMatrix4fv(shadowShader.getModelMatrixLocation(), 1, false, glm::value_ptr(modelMatrix));
         glUniformMatrix4fv(shadowShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));

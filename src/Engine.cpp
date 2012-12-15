@@ -8,7 +8,7 @@
 #define B_BPP 8
 #define A_BPP 8
 #define DEPTH_BPP 32
-#define STENCIL_BPP 8
+#define STENCIL_BPP 0
 
 namespace glen
 {
@@ -69,7 +69,7 @@ namespace glen
 
 		glEnable(GL_DEPTH_TEST);
     	glEnable(GL_CULL_FACE);
-    	glfwSwapInterval(0);
+    	glfwSwapInterval(1);
 
 		return true;
 	}
