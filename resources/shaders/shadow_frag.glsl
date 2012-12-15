@@ -2,56 +2,57 @@
  
 precision highp float; // needed only for version 1.30
 
-uniform sampler2DShadow texture0;
+uniform int numLights = 1;
 
-uniform vec3 lightPos;
-uniform vec3 lightDir;
-uniform float lightOuterAngle;
-uniform float lightInnerAngle;
+uniform sampler2DArrayShadow texture[8];
+uniform vec4 lightPos[8];
+uniform vec4 lightDir[8];
+uniform vec4 lightColor[8];
+
+in vec4 ShadowProj[8];
 
 in vec3 Normal;
-in vec3 ViewDir;
 in vec3 WorldPos;
-in vec4 ShadowProj;
 
 out vec4 out_Color;
 
-const float PI = 3.14159265;
+const float DegToRad = 0.0174532925199432957692369076848861;
 
-float toRadians(float angle)
-{
-	return angle * PI / 180.0;
-}
- 
 void main(void)
 {
-	vec3 fragToLight = (lightPos - WorldPos);
-	float lightIntensity = 0.0;
+	vec3 radiance = vec3(0.0);
 
-	float lightDist = length(fragToLight);
-
-	vec3 L = fragToLight / lightDist;
-	vec3 D = lightDir;
-
-	float cur_angle = dot(-L,D);
-	float inner_angle = cos(toRadians(lightInnerAngle * 0.5));
-	float outer_angle = cos(toRadians(lightOuterAngle * 0.5));
-	float diff_angle = inner_angle - outer_angle;
-
-	// Soft edge on spotlight
-	float spot = clamp((cur_angle - outer_angle) /
-					diff_angle, 0.0, 1.0);
-
-	// Light attenuation term
-	float att = 60.0 / (lightDist*lightDist);
-
-	if(ShadowProj.w > 0.0)
+	for(int i=0; i<numLights; i++)
 	{
-		lightIntensity += textureProj(texture0, ShadowProj) * spot * att;
+		vec3 lightToFrag = (WorldPos - lightPos[i].xyz);
+
+		float lightDist = length(lightToFrag);
+
+		vec3 L = lightToFrag / lightDist;
+		vec3 D = lightDir[i].xyz;
+
+		float lightOuterAngle = lightPos[i].w;
+		float lightInnerAngle = lightDir[i].w;
+
+		float cur_angle = dot(-L,D);
+		float inner_angle = cos(lightInnerAngle * 0.5 * DegToRad);
+		float outer_angle = cos(lightOuterAngle * 0.5 * DegToRad);
+		float diff_angle = inner_angle - outer_angle;
+
+		// Soft edge on spotlight
+		float spot = clamp((cur_angle - outer_angle) /
+						diff_angle, 0.0, 1.0);
+
+		float lightLumen = lightColor[i].a;
+
+		// Light attenuation term
+		float att = lightLumen / (lightDist*lightDist);
+
+		if(ShadowProj[i].w > 0.0)
+		{
+			radiance += textureProj(texture[i], ShadowProj[i]) * spot * att * lightColor[i].rgb;
+		}
 	}
 
-	vec3 color = vec3(1.0,0.0,0.0);
-	vec3 light = vec3(pow(lightIntensity,0.45));
-
-	out_Color = vec4(color * light,1.0);
+	out_Color = vec4(radiance,1.0);
 }

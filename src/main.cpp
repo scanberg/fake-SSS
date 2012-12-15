@@ -65,6 +65,7 @@ int main()
 
     lights.push_back(&light[0]);
     lights.push_back(&light[1]);
+    lights.push_back(&light[2]);
 
     cam.setPosition(0,10,10);
     cam.lookAt(&lookPos);
