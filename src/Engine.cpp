@@ -69,7 +69,7 @@ namespace glen
 
 		glEnable(GL_DEPTH_TEST);
     	glEnable(GL_CULL_FACE);
-    	glfwSwapInterval(1);
+    	glfwSwapInterval(0);
 
 		return true;
 	}

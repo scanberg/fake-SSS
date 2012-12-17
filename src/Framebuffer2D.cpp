@@ -20,7 +20,10 @@ Framebuffer2D::Framebuffer2D(int width, int height, int numAuxBuffers)
     glGenFramebuffers(1, &fboHandle);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
-    glDrawBuffer(GL_NONE);
+
+    if(auxBuffersSize == 0)
+        glDrawBuffer(GL_NONE);
+    
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -40,7 +43,7 @@ Framebuffer2D::~Framebuffer2D()
 bool Framebuffer2D::attachBuffer(   unsigned char buffer,
                                     GLint internalFormat, GLint format, GLint type,
                                     GLint textureMinFilter, GLint textureMagFilter,
-                                    GLint textureWrapS, GLint textureWrapT)
+                                    GLint textureWrapS, GLint textureWrapT, GLboolean mipMap)
 {
     if(bufferIsValid(buffer))
     {
@@ -58,6 +61,7 @@ bool Framebuffer2D::attachBuffer(   unsigned char buffer,
         glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureMagFilter );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, textureWrapS );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, textureWrapT );
+        glTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, mipMap);
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, NULL);
 
         glBindTexture(GL_TEXTURE_2D, 0);

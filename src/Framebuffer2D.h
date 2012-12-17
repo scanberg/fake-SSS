@@ -34,7 +34,8 @@ public:
 						GLint textureMinFilter = 	GL_NEAREST,
 						GLint textureMagFilter = 	GL_NEAREST,
 						GLint textureWrapS = 		GL_CLAMP_TO_EDGE,
-						GLint textureWrapT = 		GL_CLAMP_TO_EDGE);
+						GLint textureWrapT = 		GL_CLAMP_TO_EDGE,
+						GLboolean mipMap =			GL_FALSE);
 
 	void destroyBuffers(unsigned char bufferBit);
 

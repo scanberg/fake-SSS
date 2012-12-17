@@ -3,7 +3,6 @@
 
 #include "Types.h"
 #include "Framebuffer2D.h"
-#include "Shader.h"
 
 class Spotlight
 {
@@ -16,8 +15,6 @@ public:
 
 	void setup();
 
-	void setUniforms(Shader &shader);
-
 	void setOuterAngle(float angle) { position.w = angle; setInnerAngle(angle - 5.0); }
 	void setInnerAngle(float angle) { direction.w = glm::clamp(angle, 0.0f, position.w); }
 
@@ -26,9 +23,13 @@ public:
 	void setLookAt(vec3 pos) { direction = vec4(glm::normalize(pos-getPosition()), direction.w); }
 	void setColor(vec3 col) { color = vec4(col,color.w); }
 
-	void setNear(float near) { position.w = near; }
-	void setFar(float far) { direction.w = far; }
+	void setNear(float n) { near = n; }
+	void setFar(float f) { far = f; }
 	void setLumen(float lm) { color.w = lm; }
+
+	void setPositionUniform(const char *str);
+	void setDirectionUniform(const char *str);
+	void setColorUniform(const char *str);
 
 	float getOuterAngle() { return position.w; }
 	float getInnerAngle() { return direction.w; }
@@ -37,6 +38,10 @@ public:
 	vec3 getPosition() { return vec3(position); }
 	vec3 getDirection() { return vec3(direction); }
 	vec3 getColor() { return vec3(color); }
+
+	const vec4 &getRawPosition() { return position; }
+	const vec4 &getRawDirection() { return direction; }
+	const vec4 &getRawColor() { return color; }
 
 	float getNear() { return near; }
 	float getFar() { return far; }
@@ -53,7 +58,7 @@ private:
 	float near;
 	float far;
 
-	// Pack uniform-data to reduce strain on GPU-bus, i hope.
+	// Pack uniform-data to reduce strain on GPU-bus, I hope.
 	vec4 position;	// outerAngle packed in w
 	vec4 direction;	// innerAngle packed in w
 	vec4 color;		// lumen packed in w

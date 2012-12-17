@@ -8,7 +8,7 @@ in vec2 TexCoord;
 
 out vec4 out_Color;
 
-const float f = 50.0;
+const float f = 30.0;
 const float n = 0.1;
 
 float linearizeDepth(float depth)
@@ -18,7 +18,7 @@ float linearizeDepth(float depth)
 
 void main(void)
 {
-	//vec4 textureColor = vec4(texture(texture0, TexCoord).r);
+	//vec4 textureColor = vec4(texture(texture0, TexCoord));
 	vec4 textureColor = vec4( linearizeDepth( texture(texture0, TexCoord).r ) );
 
 	out_Color = textureColor;

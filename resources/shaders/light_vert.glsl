@@ -12,7 +12,7 @@ in vec3 in_normal;
 
 out vec3 Normal;
 out vec3 WorldPos;
-out vec4 ShadowProj;
+out vec4 ShadowProj[4];
 
 void main(void)
 {
@@ -21,5 +21,8 @@ void main(void)
 	Normal = mat3(viewMatrix * modelMatrix) * in_normal;
 	WorldPos = (modelMatrix * vec4(in_position, 1.0)).xyz;
 
-	ShadowProj = textureMatrix * vec4(in_position + in_normal*0.05, 1.0);
+	for(int i=0; i<1; i++)
+	{
+		ShadowProj[i] = textureMatrix * vec4(in_position + in_normal*0.02, 1.0);
+	}
 }
