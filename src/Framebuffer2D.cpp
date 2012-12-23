@@ -5,15 +5,10 @@
 
 #define clamp(x,min,max) (x < min) ? min : ( (x > max) ? max : x )
 
-Framebuffer2D::Framebuffer2D(int width, int height, int numAuxBuffers)
+Framebuffer2D::Framebuffer2D(int width, int height)
 {
     this->width = width;
     this->height = height;
-    auxHandle = NULL;
-	auxBuffersSize = clamp(numAuxBuffers, 0, MAX_AUX_BUFFERS);
-
-    if(auxBuffersSize > 0)
-        auxHandle = new unsigned int[auxBuffersSize];
 
     logErrorsGL();
     
@@ -21,10 +16,9 @@ Framebuffer2D::Framebuffer2D(int width, int height, int numAuxBuffers)
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
 
-    if(auxBuffersSize == 0)
-        glDrawBuffer(GL_NONE);
-    
+    glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -35,9 +29,6 @@ Framebuffer2D::~Framebuffer2D()
 
     destroyBuffers( FBO_AUX0_BIT | FBO_AUX1_BIT | FBO_AUX2_BIT | FBO_AUX3_BIT |
                     FBO_DEPTH_BIT | FBO_STENCIL_BIT);
-
-    if(auxHandle)
-        delete[] auxHandle;
 }
 
 bool Framebuffer2D::attachBuffer(   unsigned char buffer,
@@ -82,22 +73,18 @@ bool Framebuffer2D::attachBuffer(   unsigned char buffer,
 void Framebuffer2D::destroyBuffers(unsigned char bufferBit)
 {
     if( bufferBit & FBO_AUX0_BIT &&
-        auxBuffersSize > FBO_AUX0 &&
         glIsTexture(auxHandle[FBO_AUX0]))
             glDeleteTextures(1, &auxHandle[FBO_AUX0]);
 
     if( bufferBit & FBO_AUX1_BIT &&
-        auxBuffersSize > FBO_AUX1 &&
         glIsTexture(auxHandle[FBO_AUX1]))
             glDeleteTextures(1, &auxHandle[FBO_AUX1]);
 
     if( bufferBit & FBO_AUX2_BIT &&
-        auxBuffersSize > FBO_AUX2 &&
         glIsTexture(auxHandle[FBO_AUX2]))
             glDeleteTextures(1, &auxHandle[FBO_AUX2]);
 
     if( bufferBit & FBO_AUX3_BIT &&
-        auxBuffersSize > FBO_AUX3 &&
         glIsTexture(auxHandle[FBO_AUX3]))
             glDeleteTextures(1, &auxHandle[FBO_AUX3]);
 
@@ -117,6 +104,24 @@ void Framebuffer2D::bind()
 void Framebuffer2D::unbind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+bool Framebuffer2D::bufferIsAux(unsigned char buffer)
+{
+    return  buffer == FBO_AUX0 ||
+            buffer == FBO_AUX1 ||
+            buffer == FBO_AUX2 ||
+            buffer == FBO_AUX3;
+}
+
+bool Framebuffer2D::bufferIsDepth(unsigned char buffer)
+{
+    return buffer == FBO_DEPTH;
+}
+
+bool Framebuffer2D::bufferIsStencil(unsigned char buffer)
+{
+    return buffer == FBO_STENCIL;
 }
 
 bool Framebuffer2D::bufferIsValid(unsigned char buffer)

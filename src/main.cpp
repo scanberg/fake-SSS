@@ -12,8 +12,8 @@
 #include "Light.h"
 #include "Spotlight.h"
 
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH 1024
+#define WINDOW_HEIGHT 768
 #define NUM_LIGHTS 1
 
 void modifyCamera(Camera *cam);
@@ -49,25 +49,25 @@ int main()
     GLuint testTexture = 0;
 
     Camera cam;
-    vec3 lookPos(0,2,0);
+    vec3 lookPos(0,0.3,0);
+
+    //Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    //fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+    Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
+    fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE);
+    fboFront.attachBuffer(FBO_AUX0, GL_RG, GL_RG16F, GL_FLOAT);
 
     Spotlight spotlight;
-    spotlight.setPosition(vec3(0,10,-10));
-    spotlight.setLookAt(vec3(0));
-    spotlight.setColor(vec3(1.0,0.8,0.5));
+    spotlight.setPosition(vec3(2,2.5,-2));
+    spotlight.setLookAt(vec3(0,0.3,0));
+    spotlight.setColor(vec3(1.0,0.9,0.7));
 
     cam.setPosition(0,10,10);
     cam.lookAt(&lookPos);
 
     mat4 modelMatrix(1.0), modelViewMatrix(1.0);
     mat4 textureMatrix;
-
-    Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-    fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
-
-    Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-    fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
-    //fboFront.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT);
 
     // createFBO();
 
@@ -77,7 +77,8 @@ int main()
     Shader basicShader("resources/shaders/basic_vert.glsl", "resources/shaders/basic_frag.glsl");
     Shader lightShader("resources/shaders/light_vert.glsl", "resources/shaders/light_frag.glsl");
 
-    loadObj(bunny,"resources/meshes/bunny.obj",0.4f);
+    loadObj(bunny,"resources/meshes/head.obj",2.0f);
+    bunny.translate(vec3(0,0.5,0));
     bunny.createStaticBuffers();
 
     Geometry fsquad;
@@ -115,7 +116,7 @@ int main()
     glActiveTexture(GL_TEXTURE0);
 
     loadTexture("resources/textures/texture.tga", testTexture);
-    glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
+    //glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
     // glBindTexture(GL_TEXTURE_2D, depthMap);
 
     while(true)
@@ -243,9 +244,9 @@ void modifyCamera(Camera *cam)
     if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT))
         rotAngle += mouseMove * 0.01f;
 
-    rotAngle.y = glm::clamp(rotAngle.y, 0.1f, 3.1415926535897932f * 0.5f);
+    rotAngle.y = glm::clamp(rotAngle.y, -0.2f, 3.1415926535897932f * 0.5f);
 
-    float dist = 10;
+    float dist = 1;
 
     cam->setPosition(dist*glm::cos(rotAngle.x), dist*glm::sin(rotAngle.y), dist*glm::sin(rotAngle.x));
 
@@ -257,7 +258,7 @@ void modifyCamera(Camera *cam)
 void drawScene()
 {
     bunny.draw();
-    plane.draw();
+    //plane.draw();
 }
 
 /*

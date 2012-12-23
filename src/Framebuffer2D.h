@@ -15,7 +15,7 @@
 class Framebuffer2D
 {
 public:
-	Framebuffer2D(int width, int height, int numAuxBuffers = 1);
+	Framebuffer2D(int width, int height);
 	~Framebuffer2D();
 
 /**
@@ -47,14 +47,16 @@ public:
 	unsigned int getBufferHandle(unsigned char buffer) { return *getTextureHandle(buffer); }
 
 private:
+	bool bufferIsAux(unsigned char buffer);
+	bool bufferIsDepth(unsigned char buffer);
+	bool bufferIsStencil(unsigned char buffer);
 	bool bufferIsValid(unsigned char buffer);
 	unsigned int *getTextureHandle(unsigned char buffer);
 	GLenum getGLAttachment(unsigned char buffer);
 
 	int width, height;
 
-	int auxBuffersSize;
-	unsigned int *auxHandle;
+	unsigned int auxHandle[4];
 	unsigned int depthHandle;
 	unsigned int stencilHandle;
 

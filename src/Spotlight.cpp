@@ -17,7 +17,7 @@ Spotlight::Spotlight()
 	color = 	vec4(1,1,1,100.0);
 
 	depthFbo = NULL;
-	depthFbo = new Framebuffer2D(width, height, 0);
+	depthFbo = new Framebuffer2D(width, height);
 
 	depthFbo->attachBuffer(	FBO_DEPTH,
 							GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT,

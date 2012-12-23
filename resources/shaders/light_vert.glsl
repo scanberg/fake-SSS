@@ -23,6 +23,6 @@ void main(void)
 
 	for(int i=0; i<1; i++)
 	{
-		ShadowProj[i] = textureMatrix * vec4(in_position + in_normal*0.02, 1.0);
+		ShadowProj[i] = textureMatrix * vec4(in_position + in_normal*0.002, 1.0);
 	}
 }

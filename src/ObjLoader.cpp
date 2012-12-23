@@ -9,13 +9,19 @@
 #define toFloat(x) atof(x.c_str())
 #define toInt(x) atoi(x.c_str())
 
+#define hasVertex tempVertex.size() > 0
+#define hasTexCoord tempTexCoord.size() > 0
+#define hasNormal tempNormal.size() > 0
+
+//#define DEBUG
+
 typedef struct
 {
     unsigned int vertexIndex, texCoordIndex, normalIndex;
 }sStoredVertex;
 
 // Helper function to retrive the indices in a face chunk
-void getIndices(const std::string &str, int &v, int &t, int &n)
+void getIndices(const std::string &str, int &v, int &t, int &n, bool vertex, bool texCoord, bool normal)
 {
     v = t = n = -1;
 
@@ -33,15 +39,17 @@ void getIndices(const std::string &str, int &v, int &t, int &n)
         }
     }
 
-    v = atoi(str.substr(0,slash[0]).c_str())-1;
+    if(vertex)
+        v = atoi(str.substr(0,slash[0]).c_str())-1;
 
     if(counter==0)
         return;
 
-    if(slash[0]+1 != slash[1])
+    if(slash[0]+1 != slash[1] && texCoord)
         t = atoi(str.substr(slash[0]+1,slash[0]+1+slash[1]).c_str())-1;
 
-    n = atoi(str.substr(slash[1]+1,str.length()).c_str())-1;
+    if(normal)
+        n = atoi(str.substr(slash[1]+1,str.length()).c_str())-1;
 }
 
 bool loadObj(Geometry &geom, const std::string &filename, float scale)
@@ -97,6 +105,10 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
     while( !file.eof() && file.good() )
     {
         std::getline(file,line);
+
+        #ifdef DEBUG
+        std::cout<<line<<"\n";
+        #endif
         Tokenizer token(line);
 
         param = token.getToken();
@@ -118,7 +130,7 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
             for(int i=0; i<token.size()-1; ++i)
             {
                 param = token.getToken();
-                getIndices(param,vdata[i],vtdata[i],ndata[i]);
+                getIndices(param,vdata[i],vtdata[i],ndata[i], hasVertex, hasTexCoord, hasNormal);
 
                 if(tempSG > (int)vertexUsed[vdata[i]].size()-1)
                     vertexUsed[vdata[i]].resize(tempSG+1,-1);
@@ -137,10 +149,12 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
 
                     if(vtdata[i]>-1)
                     {
+                        assert( vtdata[i] < tempTexCoord.size() );
                         tv.texCoord = tempTexCoord[vtdata[i]];
                     }
                     if(ndata[i]>-1)
                     {
+                        assert( ndata[i] < tempNormal.size() );
                         tv.normal = tempNormal[ndata[i]];
                     }
 

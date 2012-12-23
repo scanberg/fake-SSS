@@ -39,6 +39,10 @@ public:
     void addTriangle(const uvec3 &triangle);
     const Geometry& addGeometry(const Geometry &geometry);
 
+    void translate(const vec3 &translation);
+    void rotate(const vec3 &rotation);
+    void scale(float scale);
+
     bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint texLoc=2);
     bool createDynamicBuffers();
     inline bool existOnGpu() { return glIsVertexArray(vao); }

@@ -97,6 +97,24 @@ const Geometry& Geometry::addGeometry(const Geometry &geom)
     return *this;
 }
 
+void Geometry::translate(const vec3 &translation)
+{
+    for(unsigned int i=0; i<vertices.size(); i++)
+    {
+        vertices[i].position += translation;
+    }
+}
+
+void Geometry::rotate(const vec3 &rotation)
+{
+
+}
+
+void Geometry::scale(float scale)
+{
+
+}
+
 void Geometry::clear()
 {
     vertices.clear();
