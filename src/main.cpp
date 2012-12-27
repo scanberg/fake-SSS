@@ -12,8 +12,8 @@
 #include "Light.h"
 #include "Spotlight.h"
 
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 768
+#define WINDOW_WIDTH 640
+#define WINDOW_HEIGHT 480
 #define NUM_LIGHTS 1
 
 void modifyCamera(Camera *cam);
@@ -26,7 +26,7 @@ void drawScene();
 
 GLuint fbo;
 GLuint depthMap;
-Geometry bunny;
+Geometry head;
 Geometry plane;
 std::vector<Light*> lights;
 
@@ -51,12 +51,21 @@ int main()
     Camera cam;
     vec3 lookPos(0,0.3,0);
 
-    //Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-    //fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+    Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT);
+    fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE);
+    fboBack.attachBuffer(FBO_AUX0, GL_RGB, GL_RGB16F, GL_FLOAT);
 
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE);
-    fboFront.attachBuffer(FBO_AUX0, GL_RG, GL_RG16F, GL_FLOAT);
+    fboFront.attachBuffer(FBO_AUX0, GL_RGB, GL_RGB8, GL_UNSIGNED_BYTE);
+    fboFront.attachBuffer(FBO_AUX1, GL_RG, GL_RG16F, GL_FLOAT);
+    fboFront.attachBuffer(FBO_AUX2, GL_RGB, GL_RGB16F, GL_FLOAT);
+
+    Framebuffer2D fboBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
+    fboBlur.attachBuffer(FBO_AUX0, GL_RGB, GL_RGB16F, GL_FLOAT);
+    fboBlur.attachBuffer(FBO_AUX1, GL_RGB, GL_RGB16F, GL_FLOAT);
+
+    Framebuffer2D fboFinal(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     Spotlight spotlight;
     spotlight.setPosition(vec3(2,2.5,-2));
@@ -69,17 +78,15 @@ int main()
     mat4 modelMatrix(1.0), modelViewMatrix(1.0);
     mat4 textureMatrix;
 
-    // createFBO();
-
     Shader linearDepthShader("resources/shaders/linearDepth_vert.glsl","resources/shaders/linearDepth_frag.glsl");
     Shader depthShader("resources/shaders/depth_vert.glsl","resources/shaders/depth_frag.glsl");
     Shader skinShader("resources/shaders/skin_vert.glsl", "resources/shaders/skin_frag.glsl");
     Shader basicShader("resources/shaders/basic_vert.glsl", "resources/shaders/basic_frag.glsl");
     Shader lightShader("resources/shaders/light_vert.glsl", "resources/shaders/light_frag.glsl");
 
-    loadObj(bunny,"resources/meshes/head.obj",2.0f);
-    bunny.translate(vec3(0,0.5,0));
-    bunny.createStaticBuffers();
+    loadObj(head,"resources/meshes/head.obj",2.0f);
+    head.translate(vec3(0,0.5,0));
+    head.createStaticBuffers();
 
     Geometry fsquad;
     Geometry::sVertex v;
@@ -185,7 +192,7 @@ int main()
         glUniformMatrix4fv(lightShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
         glUniformMatrix4fv(lightShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
 
-        //bunny.draw();
+        //head.draw();
         drawScene();
 
         lightShader.unbind();
@@ -213,7 +220,7 @@ int main()
 
         // glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         //fsquad.draw();
-        // //bunny.draw();
+        // //head.draw();
 
         // basicShader.unbind();
 
@@ -257,7 +264,7 @@ void modifyCamera(Camera *cam)
 
 void drawScene()
 {
-    bunny.draw();
+    head.draw();
     //plane.draw();
 }
 

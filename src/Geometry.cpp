@@ -152,7 +152,7 @@ void Geometry::calculateNormals()
             tempNormal[i] /= (f32)sharedFaces[i];
             tempNormal[i] = glm::normalize(tempNormal[i]);
         }
-        if(glm::dot(vertices[i].normal,vertices[i].normal) == 0.0f)
+        if(glm::dot(vertices[i].normal, vertices[i].normal) == 0.0f)
         {
             vertices[i].normal = tempNormal[i];
         }
@@ -252,4 +252,12 @@ void Geometry::draw()
         glDrawElements(GL_TRIANGLES, 3 * triangles.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
+}
+
+vec3 calculateTangent(glm::vec3 v1, glm::vec3 v2, glm::vec2 st1, glm::vec2 st2)
+{
+    vec3 tangent;
+    float coef = 1.0 / (st1.x * st2.y - st2.x * st1.y);
+    
+    return coef * ((v1 * st2.y) + (v2 * -st1.y));
 }
