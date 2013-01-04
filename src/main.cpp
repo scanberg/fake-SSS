@@ -45,6 +45,7 @@ int main()
     //float time;
     int timeLoc;
     int textureLoc;
+    int textureSizeLoc;
 
     GLuint testTexture = 0;
     GLuint colorMap = 0;
@@ -59,20 +60,22 @@ int main()
 
     Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);  // Back-Depth
-    fboBack.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT);                        // Back-Light
+    fboBack.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                        // Back-Light
 
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT); // Front-Depth
     fboFront.attachBuffer(FBO_AUX0, GL_RGB8, GL_RGB, GL_FLOAT);                         // Front-Albedo
     fboFront.attachBuffer(FBO_AUX1, GL_RG16F, GL_RG, GL_FLOAT);                         // Front-XY-Normal
-    fboFront.attachBuffer(FBO_AUX2, GL_RGB16F, GL_RGB, GL_FLOAT);                       // Front-Light
+    fboFront.attachBuffer(FBO_AUX2, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                       // Front-Light
 
-    Framebuffer2D fboBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT);                                // Back-Light-Blured
-    fboBlur.attachBuffer(FBO_AUX1, GL_RGB16F, GL_RGB, GL_FLOAT);                                // Front-Light-Blured
+    Framebuffer2D fboBackBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
+    fboBackBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                    // Back-Light-Blured
+
+    Framebuffer2D fboFrontBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
+    fboFrontBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                        // Front-Light-Blured
 
     Framebuffer2D fboFinal(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT);                                // Final intensities
+    fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                        // Final intensities / temp
 
     Spotlight spotlight;
     spotlight.setPosition(vec3(2,2.5,-2));
@@ -92,6 +95,8 @@ int main()
     Shader lightShader("resources/shaders/light_vert.glsl", "resources/shaders/light_frag.glsl");
     Shader backShader("resources/shaders/back_vert.glsl", "resources/shaders/back_frag.glsl");
     Shader frontShader("resources/shaders/front_vert.glsl", "resources/shaders/front_frag.glsl");
+    Shader vBlurShader("resources/shaders/basic_vert.glsl", "resources/shaders/v_blur_frag.glsl");
+    Shader hBlurShader("resources/shaders/basic_vert.glsl", "resources/shaders/h_blur_frag.glsl");
 
     loadObj(head,"resources/meshes/head.obj",2.0f);
     head.translate(vec3(0,0.5,0));
@@ -143,6 +148,7 @@ int main()
     {
         glClearDepth(1.0);
         glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
 
         // LIGHT PASS
@@ -265,14 +271,56 @@ int main()
 
         // END FRONT PASS
 
+        // No more depth comparisions that needs to be done, just full screen quads rendered.
+        glDisable(GL_DEPTH_TEST);
+
+        glActiveTexture(GL_TEXTURE0);
+
         // BLUR PASS
+
+        // BACK LIGHTING VERTICAL BLUR
+
+        vBlurShader.bind();
+        fboFinal.bind();
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        textureLoc = vBlurShader.getUniformLocation("texture0");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 0);
+
+        textureSizeLoc = vBlurShader.getUniformLocation("textureSize");
+        if(textureSizeLoc > -1)
+            glUniform1f(textureSizeLoc, WINDOW_HEIGHT);
+
+        glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_AUX0));
+
+        fsquad.draw();
+
+        // BACK LIGHTING HORIZONTAL BLUR
+
+        hBlurShader.bind();
+        fboBackBlur.bind();
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        textureLoc = hBlurShader.getUniformLocation("texture0");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 0);
+
+        textureSizeLoc = hBlurShader.getUniformLocation("textureSize");
+        if(textureSizeLoc > -1)
+            glUniform1f(textureSizeLoc, WINDOW_WIDTH);
+
+        glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
+
+        fsquad.draw();
+        hBlurShader.unbind();
 
         // END BLUR PASS
 
         // DRAW TO SCREEN
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX0));
+        glBindTexture(GL_TEXTURE_2D, fboBackBlur.getBufferHandle(FBO_AUX0));
         //glBindTexture(GL_TEXTURE_2D, spotlight.getShadowMap());
         //glBindTexture(GL_TEXTURE_2D, testTexture);
 
@@ -281,7 +329,7 @@ int main()
         glDrawBuffer(GL_BACK);
 
         glCullFace(GL_BACK);
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         basicShader.bind();
 

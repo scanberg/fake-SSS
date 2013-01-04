@@ -51,5 +51,5 @@ void main(void)
 		radiance += texture(texture0, coord) * spot * att * spotlightColor.rgb;
 	}
 
-	out_Color = texture(texture1,TexCoord);
+	out_Color = texture(texture1,TexCoord).rgb;
 }
