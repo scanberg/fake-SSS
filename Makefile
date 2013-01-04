@@ -10,7 +10,7 @@ OPENGL=1
 OBJECTS ?= src/main.o src/Engine.o src/Geometry.o src/ObjLoader.o src/Shader.o src/Tokenizer.o src/Camera.o src/Log.o src/Framebuffer2D.o src/Spotlight.o
 OUTPUT ?= Program
 FLAGS ?=
-CFLAGS ?= -O3
+CFLAGS ?= -O3 -g
 INCPATH ?=
 
 # check if argument OPENGL=1 is set, reguires glfw to be properly installed

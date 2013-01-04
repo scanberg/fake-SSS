@@ -53,8 +53,12 @@ private:
 	bool bufferIsValid(unsigned char buffer);
 	unsigned int *getTextureHandle(unsigned char buffer);
 	GLenum getGLAttachment(unsigned char buffer);
+	void updateAuxBuffers();
 
 	int width, height;
+
+	GLenum *auxBuffers;
+	unsigned char numAuxBuffers;
 
 	unsigned int auxHandle[4];
 	unsigned int depthHandle;

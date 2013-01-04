@@ -23,7 +23,7 @@
 #endif
 
 #ifndef PI
-#define PI 3.1415926535893
+#define PI 3.1415926535897932384626433832795028841968f
 #endif
 
 //namespace glen

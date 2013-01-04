@@ -1,6 +1,4 @@
 #version 150
- 
-precision highp float; // needed only for version 1.30
 
 uniform sampler2D texture0;
 
@@ -18,8 +16,8 @@ float linearizeDepth(float depth)
 
 void main(void)
 {
-	//vec4 textureColor = vec4(texture(texture0, TexCoord));
-	vec4 textureColor = vec4( linearizeDepth( texture(texture0, TexCoord).r ) );
+	vec4 textureColor = vec4(texture(texture0, TexCoord).rgb,1.0);
+	//vec4 textureColor = vec4( linearizeDepth( texture(texture0, TexCoord).r ) );
 
 	out_Color = textureColor;
 }

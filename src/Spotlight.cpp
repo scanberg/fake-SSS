@@ -9,7 +9,7 @@ static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
 
 Spotlight::Spotlight()
 {
-	width = height = 512;
+	width = height = 1024;
 	near = 0.1;
 	far = 100.0;
 	position = 	vec4(0,0,0,45.0);

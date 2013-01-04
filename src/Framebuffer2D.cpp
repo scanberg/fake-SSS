@@ -17,7 +17,9 @@ Framebuffer2D::Framebuffer2D(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
 
     glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
+
+    numAuxBuffers = 0;
+    auxBuffers = NULL;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -57,10 +59,13 @@ bool Framebuffer2D::attachBuffer(   unsigned char buffer,
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        if(bufferIsAux(buffer))
+             updateAuxBuffers();
+
         glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, *textureHandle, 0);
-
+        
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         return true;
@@ -99,11 +104,34 @@ void Framebuffer2D::bind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
     glViewport(0,0,width, height);
+
+    if(numAuxBuffers > 0)
+        glDrawBuffers(numAuxBuffers, auxBuffers);
 }
 
 void Framebuffer2D::unbind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer2D::updateAuxBuffers()
+{
+    numAuxBuffers = 0;
+    for(unsigned char i=0; i<4; i++)
+    {
+        if(glIsTexture(auxHandle[i]))
+            numAuxBuffers++;
+    }
+
+    if(auxBuffers)
+        delete[] auxBuffers;
+
+    auxBuffers = new GLenum[numAuxBuffers];
+
+    for(unsigned char i=0; i<numAuxBuffers; i++)
+    {
+        auxBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
+    }
 }
 
 bool Framebuffer2D::bufferIsAux(unsigned char buffer)
