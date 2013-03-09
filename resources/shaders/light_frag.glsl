@@ -2,31 +2,47 @@
  
 precision highp float; // needed only for version 1.30
 
-uniform int numLights = 1;
+uniform mat4 textureMatrix;
 
-uniform sampler2DShadow texture0;
+uniform sampler2D texture0;
+uniform sampler2D texture1;
+//uniform sampler2DShadow texture1;
+
 uniform vec4 spotlightPos;
 uniform vec4 spotlightDir;
 uniform vec4 spotlightColor = vec4(1,1,1,100);
+uniform vec2 spotlightNearFar = vec2(0.1,10.0);
 
-in vec4 ShadowProj[4];
+// For calculation worldPos from depth.
+uniform vec3 cameraPos;
+uniform vec3 cameraDir;
+uniform vec3 cameraNearFarFov;
 
-in vec3 Normal;
-in vec3 WorldPos;
+in vec2 TexCoord;
 
-out vec4 out_Color;
+out vec3 out_Radiance;
 
 const float DegToRad = 3.141592653589793238 / 180.0;
 
+const float ShadowDepthOffset = 0.0009;
+
 void main(void)
 {
+	vec3 worldPos = texture(texture0, TexCoord).rgb;
+
+	vec4 shadowProj = textureMatrix * vec4(worldPos, 1.0);
+	vec3 coord = shadowProj.xyz/shadowProj.w;
+
+	//coord.z = coord.z * 100.0;
+
 	vec3 radiance = vec3(0.0);
 
-	vec3 lightToFrag = (WorldPos - spotlightPos.xyz);
+	vec3 lightToFrag = (worldPos - spotlightPos.xyz);
 
-	float lightDist = length(lightToFrag);
+	float lightToFragDist = length(lightToFrag);
+	//lightToFragDist = LinearizeDepth(coord.z);
 
-	vec3 L = lightToFrag / lightDist;
+	vec3 L = lightToFrag / lightToFragDist;
 	vec3 D = spotlightDir.xyz;
 
 	float lightOuterAngle = spotlightPos.w;
@@ -44,14 +60,23 @@ void main(void)
 	float lightLumen = spotlightColor.a;
 
 	// Light attenuation term
-	float att = lightLumen / (lightDist*lightDist);
+	float att = lightLumen / (lightToFragDist*lightToFragDist);
 
-	if(ShadowProj[0].w > 0.0)
-	{
-		//radiance += textureProj(texture0, ShadowProj) * spot * att * spotlightColor.rgb;
-		vec3 coord = ShadowProj[0].xyz/ShadowProj[0].w;
-		radiance += texture(texture0, coord) * spot * att * spotlightColor.rgb;
-	}
+	//if(shadowProj.w > 0.0)
+	//{
+		//radiance += textureProj(texture1, ShadowProj) * spot * att * spotlightColor.rgb;
+		//vec3 coord = shadowProj.xyz/shadowProj.w;
+		//radiance += texture(texture1, coord) * spot * att * spotlightColor.rgb;
 
-	out_Color = vec4(radiance,1.0);
+		float lightDepth = texture(texture1, coord.xy).r;
+		float diff = max(0.0, (coord.z - lightDepth) * (spotlightNearFar.y - spotlightNearFar.x) + ShadowDepthOffset);
+
+		float sigma_t = 60.0;
+		float lightContrib = (diff > 0.0) ? 0.0 : 1.0;
+		float subsurfaceContrib = exp(-diff * sigma_t);
+
+		radiance += subsurfaceContrib * spot * att * spotlightColor.rgb;
+	//}
+
+	out_Radiance = vec3(radiance);
 }

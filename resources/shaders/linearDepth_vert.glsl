@@ -3,7 +3,7 @@
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
 
-uniform vec2 nearfar = vec2(0.1, 50.0);
+uniform vec2 nearfar = vec2(0.1, 100.0);
  
 in vec3 in_position;
 
@@ -11,8 +11,8 @@ out float Depth;
  
 void main(void)
 {
-	float d = -(viewMatrix * vec4(in_position,1.0)).z;
-	Depth = (d - nearfar.x)/(nearfar.y - nearfar.x);
-	//Depth = d;
-	gl_Position = projMatrix * viewMatrix * vec4(in_position, 1.0);
+	vec4 viewSpacePos = viewMatrix * vec4(in_position,1.0);
+	Depth = (-viewSpacePos.z - nearfar.x)/(nearfar.y - nearfar.x);
+	//Depth = -viewSpacePos.z;
+	gl_Position = projMatrix * viewSpacePos;
 }

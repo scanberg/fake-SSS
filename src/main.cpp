@@ -9,7 +9,6 @@
 #include "Camera.h"
 #include "Log.h"
 #include "Framebuffer2D.h"
-#include "Light.h"
 #include "Spotlight.h"
 
 #define WINDOW_WIDTH 1024
@@ -28,7 +27,7 @@ GLuint fbo;
 GLuint depthMap;
 Geometry head;
 Geometry plane;
-std::vector<Light*> lights;
+std::vector<Spotlight*> lights;
 
 int main()
 {
@@ -45,7 +44,7 @@ int main()
     //float time;
     int timeLoc;
     int textureLoc;
-    int textureSizeLoc;
+    //int textureSizeLoc;
 
     GLuint testTexture = 0;
     GLuint colorMap = 0;
@@ -55,33 +54,26 @@ int main()
     glGenTextures(1, &colorMap);
     glGenTextures(1, &normalMap);
 
-    Camera cam;
-    vec3 lookPos(0,0.3,0);
-
-    Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);  // Back-Depth
-    fboBack.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                        // Back-Light
-
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT); // Front-Depth
     fboFront.attachBuffer(FBO_AUX0, GL_RGB8, GL_RGB, GL_FLOAT);                         // Front-Albedo
     fboFront.attachBuffer(FBO_AUX1, GL_RG16F, GL_RG, GL_FLOAT);                         // Front-XY-Normal
-    fboFront.attachBuffer(FBO_AUX2, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                       // Front-Light
+    fboFront.attachBuffer(FBO_AUX2, GL_RGB32F, GL_RGB, GL_FLOAT);                       // World pos
 
-    Framebuffer2D fboBackBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboBackBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                    // Back-Light-Blured
-
-    Framebuffer2D fboFrontBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboFrontBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                        // Front-Light-Blured
+    Framebuffer2D fboLight(WINDOW_WIDTH, WINDOW_HEIGHT);
+    fboLight.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);
 
     Framebuffer2D fboFinal(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);                        // Final intensities / temp
+    fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR); // Final intensities / temp
 
-    Spotlight spotlight;
-    spotlight.setPosition(vec3(2,2.5,-2));
-    spotlight.setLookAt(vec3(0,0.3,0));
-    spotlight.setColor(vec3(1.0,0.9,0.7));
+    lights.push_back(new Spotlight());
+    lights[0]->setPosition(vec3(0.6,1.3,-1.5));
+    lights[0]->setLookAt(vec3(0,0.3,0));
+    lights[0]->setColor(vec3(1.0,0.9,1.0));
+    lights[0]->setLumen(10);
 
+    Camera cam;
+    vec3 lookPos(0,0.3,0);
     cam.setPosition(0,10,10);
     cam.lookAt(&lookPos);
 
@@ -99,7 +91,7 @@ int main()
     Shader hBlurShader("resources/shaders/basic_vert.glsl", "resources/shaders/h_blur_frag.glsl");
 
     loadObj(head,"resources/meshes/head.obj",2.0f);
-    head.translate(vec3(0,0.5,0));
+    head.translate(vec3(0,0.3,0));
     head.createStaticBuffers();
 
     Geometry fsquad;
@@ -151,84 +143,52 @@ int main()
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
 
-        // LIGHT PASS
+        glDepthMask(1);
+        glColorMask(0,0,0,0);
+
+        // LIGHT DEPTH PASS
 
         depthShader.bind();
 
-        spotlight.setup();
-        spotlight.bindFbo();
+        for(size_t i=0; i<lights.size(); ++i)
+        {
+            lights[i]->setup();
+            lights[i]->bindFbo();
 
-        glClear(GL_DEPTH_BUFFER_BIT);
+            glClear(GL_DEPTH_BUFFER_BIT);
 
-        modelViewMatrix = spotlight.getViewMatrix() * modelMatrix;
+            modelViewMatrix = lights[i]->getViewMatrix() * modelMatrix;
 
-        glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
-        glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(spotlight.getProjMatrix()));
+            glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+            glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(lights[i]->getProjMatrix()));
 
-        drawScene();
+            drawScene();
 
-        spotlight.unbindFbo();
+            lights[i]->unbindFbo();
+        }
 
         depthShader.unbind();
 
-        // END LIGHT PASS
+        // END LIGHT DEPTH PASS
 
         modifyCamera(&cam);
         cam.setup();
         modelViewMatrix = cam.getViewMatrix() * modelMatrix;
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, spotlight.getShadowMap());
-
-        // BACK PASS
-
-        glCullFace(GL_FRONT);
-        glDepthFunc(GL_LESS);
-
-        backShader.bind();
-
-        fboBack.bind();
-
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-        textureLoc = backShader.getUniformLocation("texture0");
-        if(textureLoc > -1)
-            glUniform1i(textureLoc, 0);
-
-        textureMatrixLoc = backShader.getUniformLocation("textureMatrix");
-        if(textureMatrixLoc > -1)
-        {
-            textureMatrix = spotlight.getTextureMatrix() * modelMatrix;
-            glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(textureMatrix));
-        }
-
-        spotlight.setPositionUniform("spotlightPos");
-        spotlight.setDirectionUniform("spotlightDir");
-        spotlight.setColorUniform("spotlightColor");
-
-        glUniformMatrix4fv(backShader.getModelMatrixLocation(), 1, false, glm::value_ptr(modelMatrix));
-        glUniformMatrix4fv(backShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
-        glUniformMatrix4fv(backShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
-
-        drawScene();
-
-        fboBack.unbind();
-
-        backShader.unbind();
-
-        // END BACK PASS
+        glDepthMask(1);
+        glColorMask(1,1,1,1);
 
         // FRONT PASS
 
-        frontShader.bind();
-
         fboFront.bind();
 
-        glActiveTexture(GL_TEXTURE1);
+        frontShader.bind();
+
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorMap);
 
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMap);
 
         glCullFace(GL_BACK);
@@ -244,84 +204,80 @@ int main()
         if(textureLoc > -1)
             glUniform1i(textureLoc, 1);
 
-        textureLoc = frontShader.getUniformLocation("texture2");
-        if(textureLoc > -1)
-            glUniform1i(textureLoc, 2);
-
-        textureMatrixLoc = frontShader.getUniformLocation("textureMatrix");
-        if(textureMatrixLoc > -1)
-        {
-            textureMatrix = spotlight.getTextureMatrix() * modelMatrix;
-            glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(textureMatrix));
-        }
-
-        spotlight.setPositionUniform("spotlightPos");
-        spotlight.setDirectionUniform("spotlightDir");
-        spotlight.setColorUniform("spotlightColor");
-
         glUniformMatrix4fv(frontShader.getModelMatrixLocation(), 1, false, glm::value_ptr(modelMatrix));
         glUniformMatrix4fv(frontShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
         glUniformMatrix4fv(frontShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
 
         drawScene();
 
-        fboFront.unbind();
-
         frontShader.unbind();
+
+        fboFront.unbind();
 
         // END FRONT PASS
 
         // No more depth comparisions that needs to be done, just full screen quads rendered.
         glDisable(GL_DEPTH_TEST);
 
+        glDepthMask(0);
+
+        // LIGHT FRONT PASS
+
+        fboLight.bind();
+
+        glClearColor(0.0,0.0,0.0,0.0);
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        lightShader.bind();
+
         glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX2));
+
+        glActiveTexture(GL_TEXTURE1);
+
+        textureMatrixLoc = lightShader.getUniformLocation("textureMatrix");
+
+        textureLoc = lightShader.getUniformLocation("texture0");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 0);
+
+        textureLoc = lightShader.getUniformLocation("texture1");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 1);
+
+        for(size_t i=0; i<lights.size(); ++i)
+        {
+            glBindTexture(GL_TEXTURE_2D, lights[i]->getShadowMap());
+            
+            if(textureMatrixLoc > -1)
+            {
+                textureMatrix = lights[i]->getTextureMatrix();// * modelMatrix;
+                glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(textureMatrix));
+            }
+
+            lights[i]->setPositionUniform("spotlightPos");
+            lights[i]->setDirectionUniform("spotlightDir");
+            lights[i]->setColorUniform("spotlightColor");
+
+            fsquad.draw();
+        }
+
+        lightShader.unbind();
+
+        fboLight.unbind();
+
+        // END LIGHT FRONT PASS
 
         // BLUR PASS
-
-        // BACK LIGHTING VERTICAL BLUR
-
-        vBlurShader.bind();
-        fboFinal.bind();
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        textureLoc = vBlurShader.getUniformLocation("texture0");
-        if(textureLoc > -1)
-            glUniform1i(textureLoc, 0);
-
-        textureSizeLoc = vBlurShader.getUniformLocation("textureSize");
-        if(textureSizeLoc > -1)
-            glUniform1f(textureSizeLoc, WINDOW_HEIGHT);
-
-        glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_AUX0));
-
-        fsquad.draw();
-
-        // BACK LIGHTING HORIZONTAL BLUR
-
-        hBlurShader.bind();
-        fboBackBlur.bind();
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        textureLoc = hBlurShader.getUniformLocation("texture0");
-        if(textureLoc > -1)
-            glUniform1i(textureLoc, 0);
-
-        textureSizeLoc = hBlurShader.getUniformLocation("textureSize");
-        if(textureSizeLoc > -1)
-            glUniform1f(textureSizeLoc, WINDOW_WIDTH);
-
-        glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
-
-        fsquad.draw();
-        hBlurShader.unbind();
 
         // END BLUR PASS
 
         // DRAW TO SCREEN
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fboBackBlur.getBufferHandle(FBO_AUX0));
-        //glBindTexture(GL_TEXTURE_2D, spotlight.getShadowMap());
+        glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX0));
+        //glBindTexture(GL_TEXTURE_2D, lights[0]->getShadowMap());
         //glBindTexture(GL_TEXTURE_2D, testTexture);
 
         // // Draw to screen
@@ -349,6 +305,11 @@ int main()
     //clean up
     delete engine;
 
+    for(size_t i=0; i<lights.size(); i++)
+    {
+        delete lights[i];
+    }
+
     // destroyFBO();
 
     return 0;
@@ -362,31 +323,23 @@ void modifyCamera(Camera *cam)
     int mouseX, mouseY, mouseZ;
 
     glfwGetMousePos(&mouseX, &mouseY);
-    vec2 mouseMove((float)(mouseX-oldMouseX), (float)(mouseY-oldMouseY));
-
-    oldMouseX = mouseX; oldMouseY = mouseY;
-
-    if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT))
-        rotAngle += mouseMove * 0.01f;
-
-    rotAngle.y = glm::clamp(rotAngle.y, 0.0f, PI * 1.0f);
-
     mouseZ = glfwGetMouseWheel();
 
+    vec2 mouseMove((float)(mouseX-oldMouseX), (float)(mouseY-oldMouseY));
     dist += (float)(mouseZ-oldMouseZ) * 0.1f;
 
-    dist = glm::clamp(dist, 0.1f, 10.0f);
+    oldMouseX = mouseX; oldMouseY = mouseY; oldMouseZ = mouseZ;
 
-    oldMouseZ = mouseZ;
+    if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT))
+        rotAngle += mouseMove * 0.02f;
 
-    float theta = rotAngle.y;
-    float phi = rotAngle.x;
+    rotAngle.y = glm::clamp(rotAngle.y, 0.02f, PI * 0.98f);
+    dist = glm::clamp(dist, 0.6f, 10.0f);
 
-    cam->setPosition(dist*glm::sin(theta)*glm::cos(phi), dist*glm::sin(theta)*glm::sin(phi), dist*glm::cos(theta));
+    float theta = -rotAngle.y;
+    float phi = -rotAngle.x;
 
-    //mat = glm::rotate(mat4(), rotAngle.y, vec3(1,0,0));
-    //mat = glm::rotate(mat, rotAngle.x, vec3(0,1,0));
-
+    cam->setPosition(dist*glm::sin(theta)*glm::sin(phi), dist*glm::cos(theta), dist*glm::sin(theta)*glm::cos(phi));
 }
 
 void drawScene()

@@ -11,7 +11,7 @@ Spotlight::Spotlight()
 {
 	width = height = 1024;
 	near = 0.1;
-	far = 100.0;
+	far = 10.0;
 	position = 	vec4(0,0,0,45.0);
 	direction = vec4(0,0,-1,40.0);
 	color = 	vec4(1,1,1,100.0);
