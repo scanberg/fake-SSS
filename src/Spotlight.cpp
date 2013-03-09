@@ -20,7 +20,7 @@ Spotlight::Spotlight()
 	depthFbo = new Framebuffer2D(width, height);
 
 	depthFbo->attachBuffer(	FBO_DEPTH,
-							GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT,
+							GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT,
 							GL_LINEAR, GL_LINEAR);
 
 	glBindTexture(GL_TEXTURE_2D, getShadowMap());

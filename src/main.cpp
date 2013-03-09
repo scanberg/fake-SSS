@@ -67,7 +67,7 @@ int main()
     fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR); // Final intensities / temp
 
     lights.push_back(new Spotlight());
-    lights[0]->setPosition(vec3(0.6,1.3,-1.5));
+    lights[0]->setPosition(vec3(0.27,1.3,-1.5));
     lights[0]->setLookAt(vec3(0,0.3,0));
     lights[0]->setColor(vec3(1.0,0.9,1.0));
     lights[0]->setLumen(10);
@@ -234,8 +234,6 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX2));
 
-        glActiveTexture(GL_TEXTURE1);
-
         textureMatrixLoc = lightShader.getUniformLocation("textureMatrix");
 
         textureLoc = lightShader.getUniformLocation("texture0");
@@ -246,8 +244,16 @@ int main()
         if(textureLoc > -1)
             glUniform1i(textureLoc, 1);
 
+        textureLoc = lightShader.getUniformLocation("texture2");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 2);
+
         for(size_t i=0; i<lights.size(); ++i)
         {
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, lights[i]->getShadowMap());
+
+            glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, lights[i]->getShadowMap());
             
             if(textureMatrixLoc > -1)
@@ -268,6 +274,10 @@ int main()
         fboLight.unbind();
 
         // END LIGHT FRONT PASS
+
+        // COMPOSIT PASS
+
+        // END COMPOSIT PASS
 
         // BLUR PASS
 
