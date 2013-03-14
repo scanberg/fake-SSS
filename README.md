@@ -2,7 +2,9 @@
 
 1. LIGHT DEPTH PASS, Render lights that cast shadows 32	bit depth?
 
-2. FRONT PASS, Render depth, albedo, normal and light, 32 + 3*8? + 2*16 + 3*16
+2. FRONT PASS, Render depth, albedo, normal , 32 + 3*8? + 2*16
+
+2. LIGHTS PASS, Render all lights into an accumulated buffer
 
 3. LIGHT BLUR PASS, Blur front
 

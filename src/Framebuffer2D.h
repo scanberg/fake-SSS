@@ -49,7 +49,6 @@ public:
 private:
 	bool bufferIsAux(unsigned char buffer);
 	bool bufferIsDepth(unsigned char buffer);
-	bool bufferIsStencil(unsigned char buffer);
 	bool bufferIsValid(unsigned char buffer);
 	unsigned int *getTextureHandle(unsigned char buffer);
 	GLenum getGLAttachment(unsigned char buffer);
@@ -62,7 +61,6 @@ private:
 
 	unsigned int auxHandle[4];
 	unsigned int depthHandle;
-	unsigned int stencilHandle;
 
 	unsigned int fboHandle;
 };
@@ -75,7 +73,7 @@ private:
 #define FBO_AUX2	0x02
 #define FBO_AUX3	0x03
 #define FBO_DEPTH	0x04
-#define FBO_STENCIL	0x05
+#define FBO_COUNT	0x05
 
 /**
  * Table 2: Buffer bits that can be specified in resizeBuffers
@@ -85,7 +83,6 @@ private:
 #define FBO_AUX2_BIT 	0x02
 #define FBO_AUX3_BIT 	0x04
 #define FBO_DEPTH_BIT	0x08
-#define FBO_STENCIL_BIT	0x10
 
 
 #endif

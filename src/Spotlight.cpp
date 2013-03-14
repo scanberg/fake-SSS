@@ -9,7 +9,7 @@ static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
 
 Spotlight::Spotlight()
 {
-	width = height = 1024;
+	width = height = 512;
 	near = 0.1;
 	far = 10.0;
 	position = 	vec4(0,0,0,45.0);
@@ -20,12 +20,12 @@ Spotlight::Spotlight()
 	depthFbo = new Framebuffer2D(width, height);
 
 	depthFbo->attachBuffer(	FBO_DEPTH,
-							GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT,
+							GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT,
 							GL_LINEAR, GL_LINEAR);
 
 	glBindTexture(GL_TEXTURE_2D, getShadowMap());
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }

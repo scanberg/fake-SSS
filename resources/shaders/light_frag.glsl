@@ -6,7 +6,6 @@ uniform mat4 textureMatrix;
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
-uniform sampler2DShadow texture2;
 
 uniform vec4 spotlightPos;
 uniform vec4 spotlightDir;
@@ -28,11 +27,20 @@ const float DegToRad = 3.141592653589793238 / 180.0;
 
 const float ShadowDepthOffset = 0.0009;
 
-vec3 shadowSampler(vec3 seed, vec4 shadowCoord, sampler2D shadowTexture)
+// http://olivers.posterous.com/linear-depth-in-glsl-for-real
+// Not a linear operation
+float linearizeDepth(float d, vec2 nf)
+{
+    float z_n = 2.0 * d - 1.0;
+    return 2.0 * nf.x * nf.y / (nf.y + nf.x - z_n * (nf.y - nf.x));
+}
+
+float ditheredSampler(sampler2D depthTexture, vec3 seed, vec4 shadowCoord)
 {
 	const int POISSON_COUNT = 64;
-	const int SAMPLES = 4;
+	const int SAMPLES = 2;
 	const float OFFSET_SCALE = 1.0/128.0;
+	const float ONE_OVER_W = 1.0 / shadowCoord.w;
 
 	vec2 poissonDisk[POISSON_COUNT];
 	poissonDisk[0] = vec2(-0.613392, 0.617481);
@@ -100,36 +108,20 @@ vec3 shadowSampler(vec3 seed, vec4 shadowCoord, sampler2D shadowTexture)
 	poissonDisk[62] = vec2(-0.545396, 0.538133);
 	poissonDisk[63] = vec2(-0.178564, -0.596057);
 
-	//return textureProj(shadowTexture, shadowCoord,0.0);
-
 	int index = int(seed.x*seed.y/seed.z);
 
-	vec3 val = vec3(0.0);
+	float val = texture(depthTexture, shadowCoord.xy*ONE_OVER_W).r;
 	vec2 offset;
-	vec3 coord;
-
-	float sigma_t = 150;
-
-	vec3 insideColor = materialColorAndDensity.xyz;
+	vec2 coord;
 
 	for(int i=0; i<SAMPLES; i++)
 	{
 		offset = poissonDisk[ int(mod( index+i, POISSON_COUNT)) ] * OFFSET_SCALE;
-
-		coord = vec3(shadowCoord.xy + offset, shadowCoord.z) / shadowCoord.w;
-
-		float lightDepth = texture(shadowTexture, coord.xy).r;
-		float diff = max(0.0, (coord.z - lightDepth) * (spotlightNearFar.y - spotlightNearFar.x));
-
-		float directContrib = (diff > ShadowDepthOffset) ? 0.0 : 1.0;
-		float subsurfaceContrib = exp(-diff * sigma_t);
-
-		val += directContrib + subsurfaceContrib * insideColor;
-
-		//val += textureProj(shadowTexture, shadowCoord+vec4(offset,-ShadowDepthOffset,0.0));
+		coord = (shadowCoord.xy + offset) * ONE_OVER_W;
+		val += texture(depthTexture, coord).r;
 	}
 
-	return val / float(SAMPLES);
+	return val / float(SAMPLES+1);
 
 }
 
@@ -145,6 +137,7 @@ void main(void)
 	vec3 lightToFrag = (worldPos - spotlightPos.xyz);
 
 	float lightToFragDist = length(lightToFrag);
+	//lightToFragDist = shadowProj.z;
 
 	vec3 L = lightToFrag / lightToFragDist;
 	vec3 D = spotlightDir.xyz;
@@ -166,17 +159,40 @@ void main(void)
 	// Light attenuation term
 	float att = lightLumen / (lightToFragDist*lightToFragDist);
 
-	float lightDepth = texture(texture1, coord.xy).r;
-	float diff = max(0.0, (coord.z - lightDepth) * (spotlightNearFar.y - spotlightNearFar.x));
+	// Total spotlight contribution
+	vec3 spotLightContrib = spot * att * spotlightColor.rgb;
 
-	float sigma_t = 150;
-	float directContrib = (diff > ShadowDepthOffset) ? 0.0 : 1.0;
-	float subsurfaceContrib = exp(-diff * sigma_t);
+	// World depth values
+	float textureDepth = texture(texture1, coord.xy).r;
+	//float textureDepth = ditheredSampler(texture1, worldPos, shadowProj);
 
-	vec3 insideColor = materialColorAndDensity.xyz;
+	float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
+	float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
+	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
 
-	radiance += (subsurfaceContrib * insideColor + directContrib ) * spot * att * spotlightColor.rgb;
+	float upperDepthBound = 0.001;
+	float directContrib = 1.0 - smoothstep(0.0, upperDepthBound, deltaDepth);
+	radiance += directContrib * spotLightContrib;
+	
+	float sigma = 120.0;
+	vec3 insideColor = materialColorAndDensity.rgb;
+
+	deltaDepth = max(0.0, deltaDepth);
+	float scatterTerm = exp(-deltaDepth * sigma);
+	vec3 subSurfaceContrib = scatterTerm * insideColor;
+
+	radiance += subSurfaceContrib * spotLightContrib;
+
+	// float diff = max(0.0, (coord.z - lightDepth) * (spotlightNearFar.y - spotlightNearFar.x));
+
+	// float sigma_t = 150;
+	// float directContrib = (diff > ShadowDepthOffset) ? 0.0 : 1.0;
+	// float subsurfaceContrib = exp(-diff * sigma_t);
+
+	// vec3 insideColor = materialColorAndDensity.xyz;
+
+	// radiance += (subsurfaceContrib * insideColor + directContrib ) * spot * att * spotlightColor.rgb;
 	//radiance += shadowSampler(worldPos, shadowProj, texture1) * spot * att * spotlightColor.rgb;
 
-	out_Radiance = vec3(radiance);
+	out_Radiance = radiance;
 }

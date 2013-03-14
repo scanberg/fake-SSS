@@ -30,7 +30,7 @@ Framebuffer2D::~Framebuffer2D()
         glDeleteFramebuffers(1, &fboHandle);
 
     destroyBuffers( FBO_AUX0_BIT | FBO_AUX1_BIT | FBO_AUX2_BIT | FBO_AUX3_BIT |
-                    FBO_DEPTH_BIT | FBO_STENCIL_BIT);
+                    FBO_DEPTH_BIT);
 }
 
 bool Framebuffer2D::attachBuffer(   unsigned char buffer,
@@ -95,9 +95,6 @@ void Framebuffer2D::destroyBuffers(unsigned char bufferBit)
 
     if(bufferBit & FBO_DEPTH_BIT && glIsTexture(depthHandle))
         glDeleteTextures(1, &depthHandle);
-
-    if(bufferBit & FBO_STENCIL_BIT && glIsTexture(stencilHandle))
-        glDeleteTextures(1, &stencilHandle);
 }
 
 void Framebuffer2D::bind()
@@ -147,23 +144,27 @@ bool Framebuffer2D::bufferIsDepth(unsigned char buffer)
     return buffer == FBO_DEPTH;
 }
 
-bool Framebuffer2D::bufferIsStencil(unsigned char buffer)
-{
-    return buffer == FBO_STENCIL;
-}
-
 bool Framebuffer2D::bufferIsValid(unsigned char buffer)
 {
     return  buffer == FBO_AUX0      ||
             buffer == FBO_AUX1      ||
             buffer == FBO_AUX2      ||
             buffer == FBO_AUX3      ||
-            buffer == FBO_DEPTH     ||
-            buffer == FBO_STENCIL;
+            buffer == FBO_DEPTH;
 }
 
 unsigned int *Framebuffer2D::getTextureHandle(unsigned char buffer)
 {
+    static unsigned int * handleMap[FBO_COUNT] = {
+        &auxHandle[FBO_AUX0],
+        &auxHandle[FBO_AUX1],
+        &auxHandle[FBO_AUX2],
+        &auxHandle[FBO_AUX3],
+        &depthHandle
+    };
+
+    buffer = clamp(buffer,0,FBO_COUNT-1);
+
     switch(buffer)
     {
         case FBO_AUX0:
@@ -181,37 +182,26 @@ unsigned int *Framebuffer2D::getTextureHandle(unsigned char buffer)
         case FBO_DEPTH:
             return &depthHandle;
             break;
-        case FBO_STENCIL:
-            return &stencilHandle;
-            break;
     }
     return NULL;
+
+    return handleMap[buffer];
 }
 
 GLenum Framebuffer2D::getGLAttachment(unsigned char buffer)
 {
-    switch(buffer)
-    {
-        case FBO_AUX0:
-            return GL_COLOR_ATTACHMENT0;
-            break;
-        case FBO_AUX1:
-            return GL_COLOR_ATTACHMENT1;
-            break;
-        case FBO_AUX2:
-            return GL_COLOR_ATTACHMENT2;
-            break;
-        case FBO_AUX3:
-            return GL_COLOR_ATTACHMENT3;
-            break;
-        case FBO_DEPTH:
-            return GL_DEPTH_ATTACHMENT;
-            break;
-        case FBO_STENCIL:
-            return GL_STENCIL_ATTACHMENT;
-            break;
-    }
-    return 0;
+    static unsigned short attachmentMap[FBO_COUNT] = {
+        GL_COLOR_ATTACHMENT0,
+        GL_COLOR_ATTACHMENT1,
+        GL_COLOR_ATTACHMENT2,
+        GL_COLOR_ATTACHMENT3,
+        GL_DEPTH_ATTACHMENT
+    };
+
+    // ASSERT THIS!
+    buffer = clamp(buffer,0,FBO_COUNT-1);
+
+    return attachmentMap[buffer];
 }
 
 #undef clamp
