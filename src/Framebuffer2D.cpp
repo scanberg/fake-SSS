@@ -78,23 +78,24 @@ bool Framebuffer2D::attachBuffer(   unsigned char buffer,
 void Framebuffer2D::destroyBuffers(unsigned char bufferBit)
 {
     if( bufferBit & FBO_AUX0_BIT &&
-        glIsTexture(auxHandle[FBO_AUX0]))
-            glDeleteTextures(1, &auxHandle[FBO_AUX0]);
+        glIsTexture(bufferHandle[FBO_AUX0]))
+            glDeleteTextures(1, &bufferHandle[FBO_AUX0]);
 
     if( bufferBit & FBO_AUX1_BIT &&
-        glIsTexture(auxHandle[FBO_AUX1]))
-            glDeleteTextures(1, &auxHandle[FBO_AUX1]);
+        glIsTexture(bufferHandle[FBO_AUX1]))
+            glDeleteTextures(1, &bufferHandle[FBO_AUX1]);
 
     if( bufferBit & FBO_AUX2_BIT &&
-        glIsTexture(auxHandle[FBO_AUX2]))
-            glDeleteTextures(1, &auxHandle[FBO_AUX2]);
+        glIsTexture(bufferHandle[FBO_AUX2]))
+            glDeleteTextures(1, &bufferHandle[FBO_AUX2]);
 
     if( bufferBit & FBO_AUX3_BIT &&
-        glIsTexture(auxHandle[FBO_AUX3]))
-            glDeleteTextures(1, &auxHandle[FBO_AUX3]);
+        glIsTexture(bufferHandle[FBO_AUX3]))
+            glDeleteTextures(1, &bufferHandle[FBO_AUX3]);
 
-    if(bufferBit & FBO_DEPTH_BIT && glIsTexture(depthHandle))
-        glDeleteTextures(1, &depthHandle);
+    if(bufferBit & FBO_DEPTH_BIT &&
+        glIsTexture(bufferHandle[FBO_DEPTH]))
+            glDeleteTextures(1, &bufferHandle[FBO_DEPTH]);
 }
 
 void Framebuffer2D::bind()
@@ -116,7 +117,7 @@ void Framebuffer2D::updateAuxBuffers()
     numAuxBuffers = 0;
     for(unsigned char i=0; i<4; i++)
     {
-        if(glIsTexture(auxHandle[i]))
+        if(glIsTexture(bufferHandle[i]))
             numAuxBuffers++;
     }
 
@@ -155,37 +156,19 @@ bool Framebuffer2D::bufferIsValid(unsigned char buffer)
 
 unsigned int *Framebuffer2D::getTextureHandle(unsigned char buffer)
 {
-    static unsigned int * handleMap[FBO_COUNT] = {
-        &auxHandle[FBO_AUX0],
-        &auxHandle[FBO_AUX1],
-        &auxHandle[FBO_AUX2],
-        &auxHandle[FBO_AUX3],
-        &depthHandle
-    };
+    // static unsigned int * handleMap[FBO_COUNT] = {
+    //     &auxHandle[FBO_AUX0],
+    //     &auxHandle[FBO_AUX1],
+    //     &auxHandle[FBO_AUX2],
+    //     &auxHandle[FBO_AUX3],
+    //     &depthHandle
+    // };
 
     buffer = clamp(buffer,0,FBO_COUNT-1);
 
-    switch(buffer)
-    {
-        case FBO_AUX0:
-            return &auxHandle[FBO_AUX0];
-            break;
-        case FBO_AUX1:
-            return &auxHandle[FBO_AUX1];
-            break;
-        case FBO_AUX2:
-            return &auxHandle[FBO_AUX2];
-            break;
-        case FBO_AUX3:
-            return &auxHandle[FBO_AUX3];
-            break;
-        case FBO_DEPTH:
-            return &depthHandle;
-            break;
-    }
-    return NULL;
+    return &bufferHandle[buffer];
 
-    return handleMap[buffer];
+    //return handleMap[buffer];
 }
 
 GLenum Framebuffer2D::getGLAttachment(unsigned char buffer)
@@ -199,7 +182,7 @@ GLenum Framebuffer2D::getGLAttachment(unsigned char buffer)
     };
 
     // ASSERT THIS!
-    buffer = clamp(buffer,0,FBO_COUNT-1);
+    //buffer = clamp(buffer,0,FBO_COUNT-1);
 
     return attachmentMap[buffer];
 }

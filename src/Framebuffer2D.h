@@ -41,10 +41,13 @@ public:
 
 	void resizeBuffers(unsigned char bufferBit, int width, int height);
 
+	inline int getWidth() { return width; }
+	inline int getHeight() { return height; }
+
 	void bind();
 	void unbind();
 
-	unsigned int getBufferHandle(unsigned char buffer) { return *getTextureHandle(buffer); }
+	inline unsigned int getBufferHandle(unsigned char buffer) { return *getTextureHandle(buffer); }
 
 private:
 	bool bufferIsAux(unsigned char buffer);
@@ -59,8 +62,7 @@ private:
 	GLenum *auxBuffers;
 	unsigned char numAuxBuffers;
 
-	unsigned int auxHandle[4];
-	unsigned int depthHandle;
+	unsigned int bufferHandle[5];
 
 	unsigned int fboHandle;
 };

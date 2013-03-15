@@ -4,9 +4,6 @@
 #include "Types.h"
 #include "Framebuffer2D.h"
 
-#define DEG_TO_RAD PI / 180.0
-#define RAD_TO_DEG 180.0 / PI
-
 class Spotlight
 {
 

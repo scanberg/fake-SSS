@@ -13,14 +13,21 @@ FLAGS ?=
 CFLAGS ?= -O3 -g
 INCPATH ?=
 
+
+
 # check if argument OPENGL=1 is set, reguires glfw to be properly installed
 ifdef OPENGL
 	MESSAGE += OpenGL,
 	ifeq ($(OS),Linux)
+		MESSAGE += for linux
 		#FLAGS := -lGL -lGLU -lX11 -static-libgcc -static-libstdc++
 		FLAGS += -lglfw -lGLEW
 	else ifeq ($(OS),Darwin)
+		MESSAGE += for darwin
 		FLAGS += -framework Cocoa -framework OpenGL -lGLEW -lglfw
+	else
+		MESSAGE += for other(win32!)
+		FLAGS += -lglfw -lopengl32 -lglew32
 	endif
 endif
 

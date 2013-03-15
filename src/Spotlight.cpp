@@ -2,6 +2,10 @@
 #include "Log.h"
 #include "Shader.h"
 
+#define DEG_TO_RAD PI / 180.0
+#define RAD_TO_DEG 180.0 / PI
+#define DEPTHMAP_RESOLUTION 2048
+
 static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
 								0.0, 0.5, 0.0, 0.0,
 								0.0, 0.0, 0.5, 0.0,
@@ -9,7 +13,7 @@ static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
 
 Spotlight::Spotlight()
 {
-	width = height = 512;
+	width = height = DEPTHMAP_RESOLUTION;
 	near = 0.1;
 	far = 10.0;
 	position = 	vec4(0,0,0,45.0);

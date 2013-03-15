@@ -170,6 +170,7 @@ void main(void)
 	float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
 	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
 
+	// A futile attempt to deal with the jagged edges of the shadowmapping
 	float upperDepthBound = 0.001;
 	float directContrib = 1.0 - smoothstep(0.0, upperDepthBound, deltaDepth);
 	radiance += directContrib * spotLightContrib;
@@ -182,17 +183,6 @@ void main(void)
 	vec3 subSurfaceContrib = scatterTerm * insideColor;
 
 	radiance += subSurfaceContrib * spotLightContrib;
-
-	// float diff = max(0.0, (coord.z - lightDepth) * (spotlightNearFar.y - spotlightNearFar.x));
-
-	// float sigma_t = 150;
-	// float directContrib = (diff > ShadowDepthOffset) ? 0.0 : 1.0;
-	// float subsurfaceContrib = exp(-diff * sigma_t);
-
-	// vec3 insideColor = materialColorAndDensity.xyz;
-
-	// radiance += (subsurfaceContrib * insideColor + directContrib ) * spot * att * spotlightColor.rgb;
-	//radiance += shadowSampler(worldPos, shadowProj, texture1) * spot * att * spotlightColor.rgb;
 
 	out_Radiance = radiance;
 }

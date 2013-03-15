@@ -17,10 +17,10 @@ void main(void)
     FragmentColor = texture( texture0, TexCoord ).rgb * weight[0];
     for (int i=1; i<3; i++) {
         FragmentColor +=
-            texture( texture0, TexCoord + vec2(offset[i], 0.0)/width )
+            texture( texture0, TexCoord + vec2(offset[i], 0.0)/width ).rgb
                 * weight[i];
         FragmentColor +=
-            texture( texture0, TexCoord - vec2(offset[i], 0.0)/width )
+            texture( texture0, TexCoord - vec2(offset[i], 0.0)/width ).rgb
                 * weight[i];
     }
 }
