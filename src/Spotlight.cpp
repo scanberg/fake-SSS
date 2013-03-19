@@ -4,7 +4,7 @@
 
 #define DEG_TO_RAD PI / 180.0
 #define RAD_TO_DEG 180.0 / PI
-#define DEPTHMAP_RESOLUTION 2048
+#define DEPTHMAP_RESOLUTION 1024
 
 static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
 								0.0, 0.5, 0.0, 0.0,
@@ -15,7 +15,7 @@ Spotlight::Spotlight()
 {
 	width = height = DEPTHMAP_RESOLUTION;
 	near = 0.1;
-	far = 10.0;
+	far = 5.0;
 	position = 	vec4(0,0,0,45.0);
 	direction = vec4(0,0,-1,40.0);
 	color = 	vec4(1,1,1,100.0);
@@ -24,12 +24,13 @@ Spotlight::Spotlight()
 	depthFbo = new Framebuffer2D(width, height);
 
 	depthFbo->attachBuffer(	FBO_DEPTH,
-							GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT,
+							GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT,
 							GL_LINEAR, GL_LINEAR);
 
 	glBindTexture(GL_TEXTURE_2D, getShadowMap());
 
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+	// If textureProj is used in shader to produce a compared result directly
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }

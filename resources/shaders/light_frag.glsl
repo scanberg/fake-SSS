@@ -2,15 +2,17 @@
  
 precision highp float; // needed only for version 1.30
 
+uniform mat4 viewMatrix;
 uniform mat4 textureMatrix;
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
+uniform sampler2D texture2;
 
 uniform vec4 spotlightPos;
 uniform vec4 spotlightDir;
 uniform vec4 spotlightColor = vec4(1,1,1,100);
-uniform vec2 spotlightNearFar = vec2(0.1,10.0);
+uniform vec2 spotlightNearFar = vec2(0.1,5.0);
 
 // For calculation worldPos from depth.
 uniform vec3 cameraPos;
@@ -20,11 +22,11 @@ uniform vec3 cameraNearFarFov;
 uniform vec4 materialColorAndDensity = vec4(0.8, 0.1, 0.1, 0.5);
 
 in vec2 TexCoord;
+in vec3 LightDirViewSpace;
 
 out vec3 out_Radiance;
 
 const float DegToRad = 3.141592653589793238 / 180.0;
-
 const float ShadowDepthOffset = 0.0009;
 
 // http://olivers.posterous.com/linear-depth-in-glsl-for-real
@@ -38,9 +40,8 @@ float linearizeDepth(float d, vec2 nf)
 float ditheredSampler(sampler2D depthTexture, vec3 seed, vec4 shadowCoord)
 {
 	const int POISSON_COUNT = 64;
-	const int SAMPLES = 2;
-	const float OFFSET_SCALE = 1.0/128.0;
-	const float ONE_OVER_W = 1.0 / shadowCoord.w;
+	const int SAMPLES = 4;
+	const float OFFSET_SCALE = 1.0/64.0;
 
 	vec2 poissonDisk[POISSON_COUNT];
 	poissonDisk[0] = vec2(-0.613392, 0.617481);
@@ -108,6 +109,8 @@ float ditheredSampler(sampler2D depthTexture, vec3 seed, vec4 shadowCoord)
 	poissonDisk[62] = vec2(-0.545396, 0.538133);
 	poissonDisk[63] = vec2(-0.178564, -0.596057);
 
+	float ONE_OVER_W = 1.0 / shadowCoord.w;
+
 	int index = int(seed.x*seed.y/seed.z);
 
 	float val = texture(depthTexture, shadowCoord.xy*ONE_OVER_W).r;
@@ -116,7 +119,7 @@ float ditheredSampler(sampler2D depthTexture, vec3 seed, vec4 shadowCoord)
 
 	for(int i=0; i<SAMPLES; i++)
 	{
-		offset = poissonDisk[ int(mod( index+i, POISSON_COUNT)) ] * OFFSET_SCALE;
+		offset = poissonDisk[ int(mod( i*index, POISSON_COUNT)) ] * OFFSET_SCALE;
 		coord = (shadowCoord.xy + offset) * ONE_OVER_W;
 		val += texture(depthTexture, coord).r;
 	}
@@ -128,6 +131,11 @@ float ditheredSampler(sampler2D depthTexture, vec3 seed, vec4 shadowCoord)
 void main(void)
 {
 	vec3 worldPos = texture(texture0, TexCoord).rgb;
+
+	vec3 viewSpaceNormal = vec3(texture(texture1, TexCoord).rg, 0.0);
+	viewSpaceNormal.z = sqrt(1.0 - dot(viewSpaceNormal.xy, viewSpaceNormal.xy));
+
+	vec3 lightDirViewSpace = vec3( viewMatrix * vec4(spotlightDir.xyz, 0.0) );
 
 	vec4 shadowProj = textureMatrix * vec4(worldPos, 1.0);
 	vec3 coord = shadowProj.xyz/shadowProj.w;
@@ -159,30 +167,34 @@ void main(void)
 	// Light attenuation term
 	float att = lightLumen / (lightToFragDist*lightToFragDist);
 
+	float cosTerm = dot(-lightDirViewSpace, viewSpaceNormal);
+	float falloff = max(0.0, cosTerm);
+
 	// Total spotlight contribution
 	vec3 spotLightContrib = spot * att * spotlightColor.rgb;
 
 	// World depth values
-	float textureDepth = texture(texture1, coord.xy).r;
-	//float textureDepth = ditheredSampler(texture1, worldPos, shadowProj);
+	float textureDepth = texture(texture2, coord.xy).r;
 
+	// Calculate the distance through the material at the fragments location towards the spotlight
 	float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
 	float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
 	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
 
+	float sigma = 1.0;
+	vec3 insideColor = materialColorAndDensity.rgb;
+
+	//deltaDepth = max(0.0, deltaDepth);
+	float scatterTerm = exp(-deltaDepth * sigma);
+	vec3 subSurfaceContrib = scatterTerm * insideColor;
+
 	// A futile attempt to deal with the jagged edges of the shadowmapping
 	float upperDepthBound = 0.001;
 	float directContrib = 1.0 - smoothstep(0.0, upperDepthBound, deltaDepth);
-	radiance += directContrib * spotLightContrib;
-	
-	float sigma = 120.0;
-	vec3 insideColor = materialColorAndDensity.rgb;
-
-	deltaDepth = max(0.0, deltaDepth);
-	float scatterTerm = exp(-deltaDepth * sigma);
-	vec3 subSurfaceContrib = scatterTerm * insideColor;
+	radiance += directContrib * spotLightContrib * falloff;
 
 	radiance += subSurfaceContrib * spotLightContrib;
 
 	out_Radiance = radiance;
+	//out_Radiance = viewSpaceNormal;
 }

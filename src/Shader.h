@@ -30,7 +30,7 @@ private:
      * projMatrix: the projection matrix
      */
      
-    GLint positionLoc, normalLoc, texCoordLoc;
+    GLint positionLoc, normalLoc, tangentLoc, texCoordLoc;
     GLint modelMatrixLoc, viewMatrixLoc, projMatrixLoc;
 
     char *vertexFile, *fragmentFile;
@@ -58,6 +58,7 @@ public:
 
     GLint getPositionLocation() { return positionLoc; }
     GLint getNormalLocation() { return normalLoc; }
+    GLint getTangentLocation() { return tangentLoc; }
     GLint getTexCoordLocation() { return texCoordLoc; }
 
     GLint getModelMatrixLocation() { return modelMatrixLoc; }

@@ -50,6 +50,7 @@ Shader::Shader()
 
     positionLoc     = -1;
     normalLoc       = -1;
+    tangentLoc      = -1;
     texCoordLoc     = -1;
     viewMatrixLoc   = -1;
     projMatrixLoc   = -1;
@@ -67,6 +68,7 @@ Shader::Shader( const char *vertFile, const char *fragFile )
 
     positionLoc     = -1;
     normalLoc       = -1;
+    tangentLoc      = -1;
     texCoordLoc     = -1;
     viewMatrixLoc   = -1;
     projMatrixLoc   = -1;
@@ -198,16 +200,18 @@ bool Shader::loadAndCompile()
     //glBindFragDataLocation(program, 0, "outputF");
     glBindAttribLocation(program, 0, "in_position");
     glBindAttribLocation(program, 1, "in_normal");
-    glBindAttribLocation(program, 2, "in_texCoord");
+    glBindAttribLocation(program, 2, "in_tangent");
+    glBindAttribLocation(program, 3, "in_texCoord");
 
     glLinkProgram(program);
     printProgramInfoLog(program);
  
     positionLoc = glGetAttribLocation(program,"in_position");
     normalLoc = glGetAttribLocation(program, "in_normal");
+    tangentLoc = glGetAttribLocation(program, "in_tangent");
     texCoordLoc = glGetAttribLocation(program, "in_texCoord");
 
-    logNote("programId: %i, posLoc %i, normLoc %i, texLoc %i", program, positionLoc, normalLoc, texCoordLoc);
+    logNote("programId: %i, posLoc %i, normLoc %i, tangLoc %i, texLoc %i", program, positionLoc, normalLoc, tangentLoc, texCoordLoc);
  
     projMatrixLoc = glGetUniformLocation(program, "projMatrix");
     viewMatrixLoc = glGetUniformLocation(program, "viewMatrix");

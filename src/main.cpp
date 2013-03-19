@@ -13,8 +13,7 @@
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
-#define NUM_LIGHTS 1
-#define NUM_LIGHT_BLUR_PASSES 1
+#define NUM_LIGHT_BLUR_PASSES 0
 #define NUM_HDR_BLUR_PASSES 0
 
 void modifyCamera(Camera *cam);
@@ -56,11 +55,14 @@ int main()
     glGenTextures(1, &colorMap);
     glGenTextures(1, &normalMap);
 
+    Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT);
+    fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);
+
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8); // Front-Depth
-    fboFront.attachBuffer(FBO_AUX0, GL_RGB8, GL_RGB, GL_FLOAT);                         // Front-Albedo
-    fboFront.attachBuffer(FBO_AUX1, GL_RG16F, GL_RG, GL_FLOAT);                         // Front-XY-Normal
-    fboFront.attachBuffer(FBO_AUX2, GL_RGB32F, GL_RGB, GL_FLOAT);                       // World pos
+    fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
+    fboFront.attachBuffer(FBO_AUX0, GL_RGB8, GL_RGB, GL_FLOAT);                             // Front-Albedo
+    fboFront.attachBuffer(FBO_AUX1, GL_RG16F, GL_RG, GL_FLOAT);                             // Front-XY-Normal
+    fboFront.attachBuffer(FBO_AUX2, GL_RGB32F, GL_RGB, GL_FLOAT);                           // World pos
 
     Framebuffer2D fboLight(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboLight.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);
@@ -75,12 +77,12 @@ int main()
     lights[0]->setLumen(1);
     lights[0]->setOuterAngle(35.0);
 
-    lights.push_back(new Spotlight());
-    lights[1]->setPosition(vec3(0.27,0.2,1.5));
-    lights[1]->setLookAt(vec3(0,0.3,0));
-    lights[1]->setColor(vec3(1.0,1.0,1.0));
-    lights[1]->setLumen(0.5);
-    lights[1]->setOuterAngle(35.0);
+    // lights.push_back(new Spotlight());
+    // lights[1]->setPosition(vec3(0.27,0.2,1.5));
+    // lights[1]->setLookAt(vec3(0,0.3,0));
+    // lights[1]->setColor(vec3(1.0,1.0,1.0));
+    // lights[1]->setLumen(0.5);
+    // lights[1]->setOuterAngle(35.0);
 
     Camera cam;
     vec3 lookPos(0,0.3,0);
@@ -102,7 +104,7 @@ int main()
     Shader compositShader("resources/shaders/basic_vert.glsl", "resources/shaders/composit_frag.glsl");
     Shader tonemapShader("resources/shaders/basic_vert.glsl", "resources/shaders/tonemap_frag.glsl");
 
-    loadObj(head,"resources/meshes/head.obj",2.0f);
+    loadObj(head,"resources/meshes/head.obj", 2.0f);
     head.translate(vec3(0,0.3,0));
     head.createStaticBuffers();
 
@@ -118,19 +120,6 @@ int main()
     fsquad.addTriangle(uvec3(0,2,3));
 
     fsquad.createStaticBuffers();
-
-    // #define PLANESIZE 10
-
-    // v.normal = vec3(0,1,0);
-    // v.position = vec3(-PLANESIZE,0,PLANESIZE);    v.texCoord = vec2(0,0); plane.addVertex(v);
-    // v.position = vec3(PLANESIZE,0,PLANESIZE);     v.texCoord = vec2(1,0); plane.addVertex(v);
-    // v.position = vec3(PLANESIZE,0,-PLANESIZE);    v.texCoord = vec2(1,1); plane.addVertex(v);
-    // v.position = vec3(-PLANESIZE,0,-PLANESIZE);   v.texCoord = vec2(0,1); plane.addVertex(v);
-
-    // plane.addTriangle(uvec3(0,1,2));
-    // plane.addTriangle(uvec3(0,2,3));
-
-    // plane.createStaticBuffers();
 
     loadTexture("resources/textures/texture.tga", testTexture);
     loadTexture("resources/textures/head.tga", colorMap);
@@ -153,17 +142,37 @@ int main()
     while(true)
     {
         glClearDepth(1.0);
-        glCullFace(GL_BACK);
-        //glDisable( GL_STENCIL_TEST );
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-
+        
         glDepthMask(1);
         glColorMask(0,0,0,0);
 
-        // LIGHT DEPTH PASS
+        glCullFace(GL_FRONT);
+        glDepthFunc(GL_GREATER);
 
         depthShader.bind();
+
+        // BACK DEPTH PASS
+
+        fboBack.bind();
+
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        modelViewMatrix = cam.getViewMatrix() * modelMatrix;
+
+        glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
+        glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
+
+        drawScene();
+
+        fboBack.unbind();
+
+        // END BACK DEPTH PASS
+
+        glCullFace(GL_BACK);
+        glDepthFunc(GL_LESS);
+
+        // LIGHT DEPTH PASS
 
         for(size_t i=0; i<lights.size(); ++i)
         {
@@ -258,6 +267,9 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX2));
 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
+
         textureMatrixLoc = lightShader.getUniformLocation("textureMatrix");
 
         textureLoc = lightShader.getUniformLocation("texture0");
@@ -268,11 +280,14 @@ int main()
         if(textureLoc > -1)
             glUniform1i(textureLoc, 1);
 
+        textureLoc = lightShader.getUniformLocation("texture2");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 2);
+
+        glUniformMatrix4fv(lightShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
+
         for(size_t i=0; i<lights.size(); ++i)
         {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, lights[i]->getShadowMap());
-
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, lights[i]->getShadowMap());
             
@@ -369,10 +384,13 @@ int main()
         glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX0));
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
+        glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX0));
 
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX0));
+        glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_DEPTH));
 
         textureLoc = compositShader.getUniformLocation("texture0");
         if(textureLoc > -1)
@@ -385,6 +403,10 @@ int main()
         textureLoc = compositShader.getUniformLocation("texture2");
         if(textureLoc > -1)
             glUniform1i(textureLoc, 2);
+
+        textureLoc = compositShader.getUniformLocation("texture3");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 3);
 
         fsquad.draw();
 
@@ -484,13 +506,13 @@ int main()
 			break;
     }
 
-    //clean up
-    delete engine;
-
     for(size_t i=0; i<lights.size(); i++)
     {
         delete lights[i];
     }
+
+    //clean up
+    delete engine;
 
     // destroyFBO();
 

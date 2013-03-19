@@ -14,6 +14,7 @@ public:
     {
         vec3 position;
         vec3 normal;
+        vec3 tangent;
         vec2 texCoord;
     }sVertex;
 
@@ -43,20 +44,20 @@ public:
     void rotate(const vec3 &rotation);
     void scale(float scale);
 
-    bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint texLoc=2);
+    bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint tangLoc=2, GLint texLoc=3);
     bool createDynamicBuffers();
     inline bool existOnGpu() { return glIsVertexArray(vao); }
     bool updateBuffers();
 
     void destroyBuffers();
 
-    void calculateNormals();
+    void process();
     void clear();
 
     void draw();
 
 private:
-    friend bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale );
+    friend bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale, int flags );
 
     u32 vao;
     u32 vbo_vertex;

@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cassert>
 #include <fstream>
+#include <list>
 
 #include "ObjLoader.h"
 
@@ -52,10 +53,10 @@ void getIndices(const std::string &str, int &v, int &t, int &n, bool vertex, boo
         n = atoi(str.substr(slash[1]+1,str.length()).c_str())-1;
 }
 
-bool loadObj(Geometry &geom, const std::string &filename, float scale)
+bool loadObj(Geometry &geom, const std::string &filename, float scale, int flags)
 {
     std::vector<Geometry> geomList;
-    loadObj(geomList,filename,scale);
+    loadObj(geomList,filename,scale,flags);
 
     geom.clear();
 
@@ -68,7 +69,74 @@ bool loadObj(Geometry &geom, const std::string &filename, float scale)
     return 0;
 }
 
-bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale )
+class VertexBank
+{
+public:
+    VertexBank()
+    {
+        indexCounter = 0;
+        uniqueVertex.reserve(100000);
+    };
+
+    bool isUnique(int v, int n, int t, int &index)
+    {
+        if(v >= uniqueVertex.size())
+        {
+            //printf("v is more than size \n");
+
+            uniqueVertex.resize(v+1, std::list<VertexItem>() );
+            index = insert(v,n,t);
+            return true;
+        }
+        else
+        {
+            
+            std::list<VertexItem>::const_iterator it = uniqueVertex[v].begin();
+            while(it != uniqueVertex[v].end())
+            {
+                if(n != it->n && t != it-> t)
+                {
+                    index = it->realIndex;
+                    return false;
+                }
+                ++it;
+            }
+            index = insert(v,n,t);
+            return true;
+        }
+    }
+
+private:
+    int insert(int v, int n, int t)
+    {
+        //printf("inserting new item \n");
+        VertexItem vert;
+        vert.v = v;
+        vert.n = n;
+        vert.t = t;
+
+        //printf("Inserting n: %i, t: %i \n", n, t);
+        vert.realIndex = indexCounter++;            
+
+        uniqueVertex[v].push_back(vert);
+
+        return vert.realIndex;
+    }
+
+    typedef struct
+    {
+        int v;
+        int n;
+        int t;
+        int realIndex;
+    }VertexItem;
+
+    int indexCounter;
+
+    std::vector< std::list<VertexItem> > uniqueVertex;
+};
+
+bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale, int flags)
 {
     std::ifstream file;
     file.open(filename.c_str(), std::ios::in);
@@ -81,6 +149,8 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
         return 1;
     }
 
+    VertexBank vb;
+
     Geometry g;
     std::string line,param;
 
@@ -91,7 +161,7 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
     tempVertex.reserve(100000);
     tempNormal.reserve(100000);
     tempTexCoord.reserve(10000);
-
+    
     std::vector<std::vector<int> > vertexUsed;
     std::vector<int> texCoordUsed;
     int tempSG = 0;
@@ -130,29 +200,23 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
             for(int i=0; i<token.size()-1; ++i)
             {
                 param = token.getToken();
-                getIndices(param,vdata[i],vtdata[i],ndata[i], hasVertex, hasTexCoord, hasNormal);
+                getIndices(param, vdata[i], vtdata[i], ndata[i], hasVertex, hasTexCoord, hasNormal);
 
-                if(tempSG > (int)vertexUsed[vdata[i]].size()-1)
-                    vertexUsed[vdata[i]].resize(tempSG+1,-1);
-
-                if(vertexUsed[vdata[i]][tempSG] > -1)
-                    fdata[i] = vertexUsed[vdata[i]][tempSG];
-                else
+                int index;
+                //printf("Checking vertex uniqueness \n");
+                if(vb.isUnique(vdata[i], ndata[i], vtdata[i], index))
                 {
-                    vertexUsed[vdata[i]][tempSG] = (int)g.vertices.size();
-
-                    fdata[i] = g.getVertexSize();
+                    index = g.getVertexSize();
 
                     Geometry::sVertex tv;
                     tv.position = tempVertex[vdata[i]];
-                    //tv.nx = tv.ny = tv.nz = tv.s = tv.t = 0.0f;
 
-                    if(vtdata[i]>-1)
+                    if(vtdata[i]>-1 && !(flags & LOADOBJ_IGNORE_TEXCOORDS))
                     {
                         assert( vtdata[i] < tempTexCoord.size() );
                         tv.texCoord = tempTexCoord[vtdata[i]];
                     }
-                    if(ndata[i]>-1)
+                    if(ndata[i]>-1 && !(flags & LOADOBJ_IGNORE_NORMALS))
                     {
                         assert( ndata[i] < tempNormal.size() );
                         tv.normal = tempNormal[ndata[i]];
@@ -160,6 +224,38 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
 
                     g.addVertex(tv);
                 }
+
+                assert(index < g.getVertexSize());
+                fdata[i] = index;
+
+                // if(tempSG > (int)vertexUsed[vdata[i]].size()-1)
+                //     vertexUsed[vdata[i]].resize(tempSG+1,-1);
+
+                // if(vertexUsed[vdata[i]][tempSG] > -1)
+                //     fdata[i] = vertexUsed[vdata[i]][tempSG];
+                // else
+                // {
+                //     vertexUsed[vdata[i]][tempSG] = (int)g.vertices.size();
+
+                //     fdata[i] = g.getVertexSize();
+
+                //     Geometry::sVertex tv;
+                //     tv.position = tempVertex[vdata[i]];
+                //     //tv.nx = tv.ny = tv.nz = tv.s = tv.t = 0.0f;
+
+                //     if(vtdata[i]>-1 && !(flags & LOADOBJ_IGNORE_TEXCOORDS))
+                //     {
+                //         assert( vtdata[i] < tempTexCoord.size() );
+                //         tv.texCoord = tempTexCoord[vtdata[i]];
+                //     }
+                //     if(ndata[i]>-1 && !(flags & LOADOBJ_IGNORE_NORMALS))
+                //     {
+                //         assert( ndata[i] < tempNormal.size() );
+                //         tv.normal = tempNormal[ndata[i]];
+                //     }
+
+                //     g.addVertex(tv);
+                // }
             }
             // if its a triangle, just insert.
             // However if its a quad, then insert the two triangles forming the quad.
@@ -206,7 +302,7 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
                 first=false;
             else
             {
-                g.calculateNormals();
+                g.process();
                 geomList.push_back(g);
             }
 
@@ -221,7 +317,7 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
     }
     file.close();
 
-    g.calculateNormals();
+    g.process();
     geomList.push_back(g);
 
     std::cout<<"done reading "<<filename<<std::endl;

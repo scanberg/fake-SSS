@@ -1,58 +1,27 @@
 #version 150
- 
-//uniform sampler2DShadow texture0;	// ShadowMap
+
 uniform sampler2D texture0; 		// Diffuse color map
 uniform sampler2D texture1;			// Normal map
-//uniform vec4 spotlightPos;
-//uniform vec4 spotlightDir;
-//uniform vec4 spotlightColor = vec4(1,1,1,100);
-
-//in vec4 ShadowProj;
 
 in vec3 Normal;
+in vec3 Tangent;
 in vec3 WorldPos;
 in vec2 TexCoord;
 
 out vec3 out_Color[3];
 
-//const float DegToRad = 3.141592653589793238 / 180.0;
-
 void main(void)
 {
-	// vec3 radiance = vec3(0.0);
+	// Transform into [-1, 1]
+	vec3 textureNormal = texture(texture1,TexCoord).rgb * 2.0 - 1.0;
 
-	// if(ShadowProj.w > 0.0)
-	// {
-	// 	vec3 lightToFrag = (WorldPos - spotlightPos.xyz);
+	vec3 n = normalize(Normal);
+	vec3 t = normalize(Tangent);
+	vec3 b = cross(n,t);
 
-	// 	float lightDist = length(lightToFrag);
-
-	// 	vec3 L = lightToFrag / lightDist;
-	// 	vec3 D = spotlightDir.xyz;
-
-	// 	float lightOuterAngle = spotlightPos.w;
-	// 	float lightInnerAngle = spotlightDir.w;
-
-	// 	float cur_angle = dot(L,D);
-	// 	float inner_angle = cos(lightInnerAngle * 0.5 * DegToRad);
-	// 	float outer_angle = cos(lightOuterAngle * 0.5 * DegToRad);
-	// 	float diff_angle = inner_angle - outer_angle;
-
-	// 	// Soft edge on spotlight
-	// 	float spot = clamp((cur_angle - outer_angle) /
-	// 					diff_angle, 0.0, 1.0);
-
-	// 	float lightLumen = spotlightColor.a;
-
-	// 	// Light attenuation term
-	// 	float att = lightLumen / (lightDist*lightDist);
-
-	// 	vec3 coord = ShadowProj.xyz/ShadowProj.w;
-	// 	radiance += texture(texture0, coord) * spot * att * spotlightColor.rgb;
-	// }
+	vec3 viewSpaceNormal = textureNormal.x * t + textureNormal.y * b + textureNormal.z * n;
 
 	out_Color[0] = texture(texture0,TexCoord).rgb;
-	out_Color[1] = vec3(texture(texture1,TexCoord).rg,0);
+	out_Color[1] = viewSpaceNormal;
 	out_Color[2] = WorldPos;
-	//out_Color[2] = radiance;
 }

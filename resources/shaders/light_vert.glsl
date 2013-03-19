@@ -1,5 +1,7 @@
 #version 150
 
+uniform mat4 viewMatrix;
+
 in vec3 in_position;
 in vec2 in_texCoord;
 

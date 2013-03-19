@@ -121,12 +121,26 @@ void Geometry::clear()
     triangles.clear();
 }
 
-void Geometry::calculateNormals()
-{
-    glm::vec3 a,b,n;
+vec3 generateTangent(vec3 v1, vec3 v2, vec2 st1, vec2 st2)
+{    
+    float coef = 1.0f / (st1.x * st2.y - st2.x * st1.y);
+    vec3 tangent;
 
-    std::vector<vec3> tempNormal;
+    tangent.x = coef * ((v1.x * st2.y)  + (v2.x * -st1.y));
+    tangent.y = coef * ((v1.y * st2.y)  + (v2.y * -st1.y));
+    tangent.z = coef * ((v1.z * st2.y)  + (v2.z * -st1.y));
+    
+    return tangent;
+}
+
+void Geometry::process()
+{
+    glm::vec3 a,b,n,t;
+    glm::vec2 sta, stb;
+
+    std::vector<vec3> tempNormal, tempTangent;
     tempNormal.resize(vertices.size(),vec3(0));
+    tempTangent.resize(vertices.size(),vec3(0));
 
     assert(vertices.size() > 0);
 
@@ -135,13 +149,20 @@ void Geometry::calculateNormals()
 
     for (u32 i=0; i<triangles.size(); ++i)
     {
-        a = vertices[triangles[i][2]].position - vertices[triangles[i][0]].position;
-        b = vertices[triangles[i][1]].position - vertices[triangles[i][0]].position;
-        n = glm::normalize(glm::cross(b,a));
+        a = vertices[triangles[i][1]].position - vertices[triangles[i][0]].position;
+        b = vertices[triangles[i][2]].position - vertices[triangles[i][0]].position;
+
+        n = glm::normalize(glm::cross(a,b));
+
+        sta = vertices[triangles[i][1]].texCoord - vertices[triangles[i][0]].texCoord;
+        stb = vertices[triangles[i][2]].texCoord - vertices[triangles[i][0]].texCoord;
+
+        t = generateTangent(a,b,sta,stb);
 
         for(u32 u=0; u<3; ++u)
         {
             tempNormal[triangles[i][u]] += n;
+            tempTangent[triangles[i][u]] += t;
             sharedFaces[triangles[i][u]]++;
         }
     }
@@ -151,15 +172,24 @@ void Geometry::calculateNormals()
         {
             tempNormal[i] /= (f32)sharedFaces[i];
             tempNormal[i] = glm::normalize(tempNormal[i]);
+
+            tempTangent[i] /= (f32)sharedFaces[i];
+            tempTangent[i] = glm::normalize(tempTangent[i]);
         }
         if(glm::dot(vertices[i].normal, vertices[i].normal) == 0.0f)
         {
             vertices[i].normal = tempNormal[i];
         }
+
+        const vec3 & t = tempTangent[i];
+        const vec3 & b = tempNormal[i];
+
+        // Gram-Schmidt orthogonalize
+        vertices[i].tangent = glm::normalize(t - n * glm::dot(n, t));
     }
 }
 
-bool Geometry::createStaticBuffers(GLint posLoc, GLint normLoc, GLint texLoc)
+bool Geometry::createStaticBuffers(GLint posLoc, GLint normLoc, GLint tangLoc, GLint texLoc)
 {
     destroyBuffers();
 
@@ -200,13 +230,23 @@ bool Geometry::createStaticBuffers(GLint posLoc, GLint normLoc, GLint texLoc)
         logWarning("normLoc in createStaticBuffer was undefined");
     }
 
+    if(tangLoc > -1)
+    {
+        glVertexAttribPointer(tangLoc, 3, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+6*sizeof(f32));
+        glEnableVertexAttribArray(tangLoc);
+    }
+    else
+    {
+        logWarning("tangLoc in createStaticBuffer was undefined");
+    }
+
     // Enable specific pointer for TextureCoord, for compability-mode and attributepointer for shader
     //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     //glTexCoordPointer(2, GL_FLOAT, sizeof(sVertex), (char*)NULL+6*sizeof(f32));
 
     if(texLoc > -1)
     {
-        glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+6*sizeof(f32));
+        glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, sizeof(sVertex), (char*)NULL+9*sizeof(f32));
         glEnableVertexAttribArray(texLoc);
     }
     else
