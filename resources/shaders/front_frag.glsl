@@ -22,7 +22,7 @@ void main(void)
 
 	vec3 viewSpaceNormal = normalize(textureNormal.x * t + textureNormal.y * b + textureNormal.z * n);
 
-	out_Color[0] = vec4(texture(texture0,TexCoord).rgb,0.0);
+	out_Color[0] = vec4(texture(texture0,TexCoord).rgb/2.2,0.0);
 	out_Color[1] = vec4(viewSpaceNormal.xy, TexCoord);
 	out_Color[2] = vec4(WorldPos,0.0);
 }

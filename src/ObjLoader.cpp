@@ -136,6 +136,30 @@ private:
     std::vector< std::list<VertexItem> > uniqueVertex;
 };
 
+size_t insertUnique(std::vector<vec2> &vec, const vec2 &item)
+{
+    for(size_t i = 0; i<vec.size(); ++i)
+    {
+        if(vec[i] == item)
+            return i;
+    }
+
+    vec.push_back(item);
+    return vec.size()-1;
+}
+
+size_t insertUnique(std::vector<vec3> &vec, const vec3 &item)
+{
+    for(size_t i = 0; i<vec.size(); ++i)
+    {
+        if(vec[i] == item)
+            return i;
+    }
+
+    vec.push_back(item);
+    return vec.size()-1;
+}
+
 bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, float scale, int flags)
 {
     std::ifstream file;
@@ -166,10 +190,13 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
     std::vector<int> texCoordUsed;
     int tempSG = 0;
 
+    std::vector<size_t> vertexRemap;
+    std::vector<size_t> normalRemap;
+    std::vector<size_t> texCoordRemap;
+
     std::vector<int> resetVector;
     resetVector.resize(1,-1);
 
-    bool first=true;
     std::string tempName;
 
     while( !file.eof() && file.good() )
@@ -190,8 +217,9 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
             vertex.y = scale*toFloat(token.getToken());
             vertex.z = scale*toFloat(token.getToken());
 
-            tempVertex.push_back(vertex);
-            vertexUsed.push_back(resetVector);
+            //tempVertex.push_back(vertex);
+            //vertexUsed.push_back(resetVector);
+            vertexRemap.push_back( insertUnique(tempVertex, vertex) );
         }
         else if(param == "f")
         {
@@ -202,24 +230,28 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
                 param = token.getToken();
                 getIndices(param, vdata[i], vtdata[i], ndata[i], hasVertex, hasTexCoord, hasNormal);
 
+                int remappedV = (vdata[i] > -1) ? vdata[i] : -1;
+                int remappedN = (ndata[i] > -1) ? ndata[i] : -1;;
+                int remappedVT = (vtdata[i] > -1) ? vtdata[i] : -1;
+
                 int index;
                 //printf("Checking vertex uniqueness \n");
-                if(vb.isUnique(vdata[i], ndata[i], vtdata[i], index))
+                if(vb.isUnique(remappedV, remappedN, remappedVT, index))
                 {
                     index = g.getVertexSize();
 
                     Geometry::sVertex tv;
-                    tv.position = tempVertex[vdata[i]];
+                    tv.position = tempVertex[ vertexRemap[ vdata[i] ] ];
 
                     if(vtdata[i]>-1 && !(flags & LOADOBJ_IGNORE_TEXCOORDS))
                     {
-                        assert( vtdata[i] < tempTexCoord.size() );
-                        tv.texCoord = tempTexCoord[vtdata[i]];
+                        assert( texCoordRemap[ vtdata[i] ] < tempTexCoord.size() );
+                        tv.texCoord = tempTexCoord[ texCoordRemap[ vtdata[i] ] ];
                     }
                     if(ndata[i]>-1 && !(flags & LOADOBJ_IGNORE_NORMALS))
                     {
-                        assert( ndata[i] < tempNormal.size() );
-                        tv.normal = tempNormal[ndata[i]];
+                        assert( normalRemap[ ndata[i] ] < tempNormal.size() );
+                        tv.normal = tempNormal[ normalRemap[ ndata[i] ] ];
                     }
 
                     g.addVertex(tv);
@@ -282,7 +314,8 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
             tc.x = toFloat(token.getToken());
             tc.y = toFloat(token.getToken());
 
-            tempTexCoord.push_back(tc);
+            //tempTexCoord.push_back(tc);
+            texCoordRemap.push_back( insertUnique(tempTexCoord, tc) );
         }
         else if(param == "vn")
         {
@@ -292,13 +325,14 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
             normal.y = toFloat(token.getToken());
             normal.z = toFloat(token.getToken());
 
-            tempNormal.push_back(normal);
+            //tempNormal.push_back(normal);
+            normalRemap.push_back( insertUnique(tempNormal, normal) );
         }
         else if(param == "s")
             tempSG = toInt(token.getToken());
         else if(param == "g")
         {
-            if(first)
+            /*if(first)
                 first=false;
             else
             {
@@ -308,15 +342,18 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
 
             for(unsigned int i=0; i<vertexUsed.size(); ++i)
                 vertexUsed[i].clear();
-
+            
             g.clear();
+            */
         }
 
         if(file.eof())
             break;
     }
     file.close();
-
+    printf("tempVertex.size() = %i \n", (int)tempVertex.size());
+    printf("tempNormal.size() = %i \n", (int)tempNormal.size());
+    printf("tempTexCoord.size() = %i \n", (int)tempTexCoord.size());
     printf("Reading is done, gonna process \n");
     g.process();
     geomList.push_back(g);

@@ -211,7 +211,7 @@ float sampleNoise( vec3 coord ) {
   //n = 0.5;
   n += 0.5   * abs( snoise( coord * 2.0 ) );
   n += 0.25  * abs( snoise( coord * 4.0 ) );
-  //n += 0.0625 * abs( snoise( coord * 8.0 ) );
+  //n += 0.125 * abs( snoise( coord * 8.0 ) );
 
   return n;
 
@@ -273,18 +273,6 @@ void main(void)
       sampleCoord += stepsize * direction;
     }
   }
-
-  //out_Radiance = (backLight + frontLight) * albedo;
-
-  //noise += 0.8;
-
-  //out_Radiance = smoothstep(0.7,1.0,noise);
-
-  //vec2 texcoord = normalXYandST.ba;
-
-  //float veinThickness = 0.4;
-  //float frequency = 25.0;
-  //float offset = 0.5;
 
   out_Radiance = vec3(0.0);
 

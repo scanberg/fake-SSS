@@ -113,7 +113,7 @@ int main()
     Shader compositShader("resources/shaders/basic_vert.glsl", "resources/shaders/composit_frag.glsl");
     Shader tonemapShader("resources/shaders/basic_vert.glsl", "resources/shaders/tonemap_frag.glsl");
 
-    loadObj(head,"resources/meshes/head.obj", 2.0f);
+    loadObj(head,"resources/meshes/head1.obj", 2.0f);
     head.translate(vec3(0,0.3,0));
     head.createStaticBuffers();
 
