@@ -19,12 +19,10 @@ uniform vec3 cameraPos;
 uniform vec3 cameraDir;
 uniform vec3 cameraNearFarFov;
 
-uniform vec4 materialColorAndDensity = vec4(0.8, 0.1, 0.1, 0.5);
-
 in vec2 TexCoord;
 in vec3 LightDirViewSpace;
 
-out vec3 out_Radiance;
+out vec3 out_Radiance[2];
 
 const float DegToRad = 3.141592653589793238 / 180.0;
 const float ShadowDepthOffset = 0.0009;
@@ -134,13 +132,12 @@ void main(void)
 
 	vec3 viewSpaceNormal = vec3(texture(texture1, TexCoord).rg, 0.0);
 	viewSpaceNormal.z = sqrt(1.0 - dot(viewSpaceNormal.xy, viewSpaceNormal.xy));
+	viewSpaceNormal = normalize(viewSpaceNormal);
 
-	vec3 lightDirViewSpace = vec3( viewMatrix * vec4(spotlightDir.xyz, 0.0) );
+	vec3 lightDirViewSpace = normalize(vec3( viewMatrix * vec4(spotlightDir.xyz, 0.0) ));
 
 	vec4 shadowProj = textureMatrix * vec4(worldPos, 1.0);
 	vec3 coord = shadowProj.xyz/shadowProj.w;
-
-	vec3 radiance = vec3(0.0);
 
 	vec3 lightToFrag = (worldPos - spotlightPos.xyz);
 
@@ -168,7 +165,6 @@ void main(void)
 	float att = lightLumen / (lightToFragDist*lightToFragDist);
 
 	float cosTerm = dot(-lightDirViewSpace, viewSpaceNormal);
-	float falloff = max(0.0, cosTerm);
 
 	// Total spotlight contribution
 	vec3 spotLightContrib = spot * att * spotlightColor.rgb;
@@ -181,20 +177,15 @@ void main(void)
 	float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
 	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
 
-	float sigma = 1.0;
-	vec3 insideColor = materialColorAndDensity.rgb;
+	float sigma = 10.0;
+	vec3 insideColor = vec3(1.0,0.0,0.0);
 
 	//deltaDepth = max(0.0, deltaDepth);
-	float scatterTerm = exp(-deltaDepth * sigma);
-	vec3 subSurfaceContrib = scatterTerm * insideColor;
+	float scatterTerm = exp(-(deltaDepth) * sigma);
+	vec3 subSurfaceContrib = scatterTerm * insideColor * spotLightContrib  * max(0.0, -cosTerm);
 
-	// A futile attempt to deal with the jagged edges of the shadowmapping
-	float upperDepthBound = 0.001;
-	float directContrib = 1.0 - smoothstep(0.0, upperDepthBound, deltaDepth);
-	radiance += directContrib * spotLightContrib * falloff;
+	vec3 surfaceContrib = ((deltaDepth > ShadowDepthOffset) ? 0.0 : 1.0) * max(0.0, cosTerm * 1.2 - 0.2) * spotLightContrib;
 
-	radiance += subSurfaceContrib * spotLightContrib;
-
-	out_Radiance = radiance;
-	//out_Radiance = viewSpaceNormal;
+	out_Radiance[0] = surfaceContrib;
+	out_Radiance[1] = subSurfaceContrib;
 }

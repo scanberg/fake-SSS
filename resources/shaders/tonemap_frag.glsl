@@ -6,7 +6,7 @@ in vec2 TexCoord;
 
 out vec3 out_Tonemapped;
 
-const float W = 1111111111.2;
+const float W = 111.2;
  
 vec3 Uncharted2Tonemap(vec3 x)
 {
@@ -22,17 +22,22 @@ vec3 Uncharted2Tonemap(vec3 x)
 
 void main(void)
 {
-	vec3 texColor = texture(texture0, TexCoord).rgb;
+	vec3 texColor;
+	texColor = texture(texture0, TexCoord).rgb;
+	//texColor += textureLod(texture0, TexCoord, 1.5).rgb;
+	//texColor += textureLod(texture0, TexCoord, 2.5).rgb;
+	//texColor += textureLod(texture0, TexCoord, 3.5).rgb;
 
 	// Hardcoded Exposure Adjustment
-	//texColor *= 16.0;
+	// texColor *= 16.0;
 	float ExposureBias = 2.0f;
 
-	vec3 curr = Uncharted2Tonemap(ExposureBias*texColor);
 	vec3 whiteScale = 1.0f/Uncharted2Tonemap(vec3(W));
+
+	vec3 curr = Uncharted2Tonemap(ExposureBias*texColor);
+	
 	vec3 color = curr*whiteScale;
 
-
-
-	out_Tonemapped = sqrt(texColor);
+	out_Tonemapped = color;
+	//out_Tonemapped = texColor;
 }

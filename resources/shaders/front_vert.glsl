@@ -13,6 +13,7 @@ out vec3 Normal;
 out vec3 Tangent;
 out vec3 WorldPos;
 out vec2 TexCoord;
+out vec3 ViewSpaceCoord;
 
 void main(void)
 {
@@ -24,6 +25,8 @@ void main(void)
 	Tangent = normalMat * in_tangent;
 
 	WorldPos = (modelMatrix * vec4(in_position, 1.0)).xyz;
+
+	ViewSpaceCoord = (viewMatrix * modelMatrix * vec4(in_position, 1.0)).xyz;
 
 	TexCoord = in_texCoord;
 }

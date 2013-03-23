@@ -7,8 +7,9 @@ in vec3 Normal;
 in vec3 Tangent;
 in vec3 WorldPos;
 in vec2 TexCoord;
+in vec3 ViewSpaceCoord;
 
-out vec3 out_Color[3];
+out vec4 out_Color[4];
 
 void main(void)
 {
@@ -19,9 +20,9 @@ void main(void)
 	vec3 t = normalize(Tangent);
 	vec3 b = cross(n,t);
 
-	vec3 viewSpaceNormal = textureNormal.x * t + textureNormal.y * b + textureNormal.z * n;
+	vec3 viewSpaceNormal = normalize(textureNormal.x * t + textureNormal.y * b + textureNormal.z * n);
 
-	out_Color[0] = texture(texture0,TexCoord).rgb;
-	out_Color[1] = viewSpaceNormal;
-	out_Color[2] = WorldPos;
+	out_Color[0] = vec4(texture(texture0,TexCoord).rgb,0.0);
+	out_Color[1] = vec4(viewSpaceNormal.xy, TexCoord);
+	out_Color[2] = vec4(WorldPos,0.0);
 }

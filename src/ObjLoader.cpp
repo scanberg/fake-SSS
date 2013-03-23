@@ -317,6 +317,7 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
     }
     file.close();
 
+    printf("Reading is done, gonna process \n");
     g.process();
     geomList.push_back(g);
 

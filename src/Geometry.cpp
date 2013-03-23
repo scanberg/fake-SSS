@@ -143,12 +143,18 @@ void Geometry::process()
     tempTangent.resize(vertices.size(),vec3(0));
 
     assert(vertices.size() > 0);
+    assert(triangles.size() > 0);
 
     std::vector<i32> sharedFaces;
     sharedFaces.resize(vertices.size(), 0);
 
+    printf("vertices.size() = %i \n", vertices.size());
+    printf("triangle.size() = %i \n", triangles.size());
+
     for (u32 i=0; i<triangles.size(); ++i)
     {
+        assert(i < triangles.size());
+
         a = vertices[triangles[i][1]].position - vertices[triangles[i][0]].position;
         b = vertices[triangles[i][2]].position - vertices[triangles[i][0]].position;
 
@@ -161,6 +167,7 @@ void Geometry::process()
 
         for(u32 u=0; u<3; ++u)
         {
+            //printf("index is %i \n",triangles[i][u]);
             tempNormal[triangles[i][u]] += n;
             tempTangent[triangles[i][u]] += t;
             sharedFaces[triangles[i][u]]++;
@@ -187,6 +194,7 @@ void Geometry::process()
         // Gram-Schmidt orthogonalize
         vertices[i].tangent = glm::normalize(t - n * glm::dot(n, t));
     }
+    printf("Done processing \n");
 }
 
 bool Geometry::createStaticBuffers(GLint posLoc, GLint normLoc, GLint tangLoc, GLint texLoc)

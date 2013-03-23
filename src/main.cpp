@@ -56,33 +56,42 @@ int main()
     glGenTextures(1, &normalMap);
 
     Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);
+    fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
 
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
     fboFront.attachBuffer(FBO_AUX0, GL_RGB8, GL_RGB, GL_FLOAT);                             // Front-Albedo
-    fboFront.attachBuffer(FBO_AUX1, GL_RG16F, GL_RG, GL_FLOAT);                             // Front-XY-Normal
+    fboFront.attachBuffer(FBO_AUX1, GL_RGBA16F, GL_RGBA, GL_FLOAT);                         // Front-XY-Normal
     fboFront.attachBuffer(FBO_AUX2, GL_RGB32F, GL_RGB, GL_FLOAT);                           // World pos
 
     Framebuffer2D fboLight(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboLight.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);
+    fboLight.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Surface radiance
+    fboLight.attachBuffer(FBO_AUX1, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Subsurface radiance
 
     Framebuffer2D fboFinal(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR); // Final intensities / temp
+    fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
+        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_TRUE);                                       // Final intensities
 
     lights.push_back(new Spotlight());
-    lights[0]->setPosition(vec3(0.27,0.7,-1.5));
+    lights[0]->setPosition(vec3(-0.2,0.5,-1.2));
     lights[0]->setLookAt(vec3(0,0.3,0));
-    lights[0]->setColor(vec3(1.0,1.0,1.0));
-    lights[0]->setLumen(1);
+    lights[0]->setColor(vec3(1.0,0.9,0.9));
+    lights[0]->setLumen(4);
     lights[0]->setOuterAngle(35.0);
 
-    // lights.push_back(new Spotlight());
-    // lights[1]->setPosition(vec3(0.27,0.2,1.5));
-    // lights[1]->setLookAt(vec3(0,0.3,0));
-    // lights[1]->setColor(vec3(1.0,1.0,1.0));
-    // lights[1]->setLumen(0.5);
-    // lights[1]->setOuterAngle(35.0);
+    lights.push_back(new Spotlight());
+    lights[1]->setPosition(vec3(0.2,0.5,-1.2));
+    lights[1]->setLookAt(vec3(0,0.3,0));
+    lights[1]->setColor(vec3(0.9,0.9,1.0));
+    lights[1]->setLumen(4);
+    lights[1]->setOuterAngle(35.0);
+
+    lights.push_back(new Spotlight());
+    lights[2]->setPosition(vec3(0.0,0.4,1.5));
+    lights[2]->setLookAt(vec3(0,0.3,0));
+    lights[2]->setColor(vec3(1.0,1.0,1.0));
+    lights[2]->setLumen(5);
+    lights[2]->setOuterAngle(35.0);
 
     Camera cam;
     vec3 lookPos(0,0.3,0);
@@ -133,22 +142,23 @@ int main()
     glClearColor(0.0,0.0,0.0,0.0);
     glClearStencil( 0 );
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
-
-    //glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
-    //glBindTexture(GL_TEXTURE_2D, depthMap);
 
     while(true)
     {
-        glClearDepth(1.0);
+        modifyCamera(&cam);
+        cam.setup();
+        modelViewMatrix = cam.getViewMatrix() * modelMatrix;
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
         glEnable(GL_DEPTH_TEST);
         
         glDepthMask(1);
         glColorMask(0,0,0,0);
 
+        glClearDepth(1.0);
         glCullFace(GL_FRONT);
-        glDepthFunc(GL_GREATER);
+        glDepthFunc(GL_LESS);
 
         depthShader.bind();
 
@@ -157,8 +167,6 @@ int main()
         fboBack.bind();
 
         glClear(GL_DEPTH_BUFFER_BIT);
-
-        modelViewMatrix = cam.getViewMatrix() * modelMatrix;
 
         glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
         glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
@@ -169,6 +177,7 @@ int main()
 
         // END BACK DEPTH PASS
 
+        glClearDepth(1.0);
         glCullFace(GL_BACK);
         glDepthFunc(GL_LESS);
 
@@ -194,11 +203,6 @@ int main()
         depthShader.unbind();
 
         // END LIGHT DEPTH PASS
-
-        modifyCamera(&cam);
-        cam.setup();
-        modelViewMatrix = cam.getViewMatrix() * modelMatrix;
-        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         //glEnable( GL_STENCIL_TEST );
         //glStencilFunc( GL_ALWAYS, 1, 1 );
@@ -256,7 +260,7 @@ int main()
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
 
-        // LIGHT FRONT PASS
+        // LIGHT PASS
 
         fboLight.bind();
 
@@ -309,7 +313,7 @@ int main()
 
         glDisable(GL_BLEND);
 
-        // END LIGHT FRONT PASS
+        // END LIGHT PASS
 
         glActiveTexture(GL_TEXTURE0);
 
@@ -381,16 +385,20 @@ int main()
         compositShader.bind();
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX0));
+        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_DEPTH));
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX0));
+        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX0));
 
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, fboBack.getBufferHandle(FBO_DEPTH));
+        glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX0));
 
         glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_DEPTH));
+        glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX1));
+
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
+
 
         textureLoc = compositShader.getUniformLocation("texture0");
         if(textureLoc > -1)
@@ -407,6 +415,18 @@ int main()
         textureLoc = compositShader.getUniformLocation("texture3");
         if(textureLoc > -1)
             glUniform1i(textureLoc, 3);
+
+        textureLoc = compositShader.getUniformLocation("texture4");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 4);
+
+        uniformLoc = compositShader.getUniformLocation("invViewMatrix");
+        if(uniformLoc > -1)
+            glUniformMatrix4fv(uniformLoc, 1, false, glm::value_ptr(cam.getInverseViewMatrix()));
+
+        uniformLoc = compositShader.getUniformLocation("camPos");
+        if(uniformLoc > -1)
+            glUniform3fv(uniformLoc, 1, glm::value_ptr(cam.getPosition()));
 
         fsquad.draw();
 
@@ -477,17 +497,18 @@ int main()
 
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
-        //glBindTexture(GL_TEXTURE_2D, lights[0]->getShadowMap());
-        //glBindTexture(GL_TEXTURE_2D, testTexture);
-
-        // // Draw to screen
+        // Draw to screen
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDrawBuffer(GL_BACK);
 
         glCullFace(GL_BACK);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
+        glGenerateMipmap(GL_TEXTURE_2D);
+        //glBindTexture(GL_TEXTURE_2D, lights[0]->getShadowMap());
+        //glBindTexture(GL_TEXTURE_2D, testTexture);
 
         //basicShader.bind();
         tonemapShader.bind();

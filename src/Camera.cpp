@@ -44,6 +44,8 @@ void Camera::setup()
 
     projMat = glm::perspective( fov, ratio, nearfar.x, nearfar.y );
 
+    invProjMat = glm::inverse(projMat);
+
     //glLoadMatrixf(&projMat[0][0]);
 
     if (lookat)
@@ -63,6 +65,8 @@ void Camera::setup()
 
         //glLoadMatrixf(&viewMat[0][0]);
     }
+
+    invViewMat = glm::inverse(viewMat);
 
     mat4 m = projMat * viewMat;
 

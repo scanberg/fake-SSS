@@ -21,6 +21,7 @@ private:
     vec3 position;
     vec3 orientation;
     mat4 viewMat, projMat;
+    mat4 invViewMat, invProjMat;
 
     vec4 plane[6];
 
@@ -39,11 +40,15 @@ public:
     void move(const vec3 &vec);
     void translate(const vec3 &vec) { position+=vec; }
 
-    vec3 getPosition() { return position; }
-    vec3 getOrientation() { return orientation; }
+    const vec3 &getPosition() { return position; }
+    const vec3 &getOrientation() { return orientation; }
+
+    float getFov() { return fov; }
 
     const mat4 &getProjMatrix() { return projMat; }
     const mat4 &getViewMatrix() { return viewMat; }
+    const mat4 &getInverseViewMatrix() { return invViewMat; }
+    const mat4 &getInverseProjMatrix() { return invProjMat; }
 };
 
 #endif
