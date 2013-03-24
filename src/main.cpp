@@ -13,8 +13,7 @@
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
-#define NUM_LIGHT_BLUR_PASSES 0
-#define NUM_HDR_BLUR_PASSES 0
+#define NUM_HDR_BLUR_PASSES 2
 
 void modifyCamera(Camera *cam);
 // void createFBO();
@@ -55,22 +54,25 @@ int main()
     glGenTextures(1, &colorMap);
     glGenTextures(1, &normalMap);
 
-    Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
+    //Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT);
+    //fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
 
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
     fboFront.attachBuffer(FBO_AUX0, GL_RGB8, GL_RGB, GL_FLOAT);                             // Front-Albedo
-    fboFront.attachBuffer(FBO_AUX1, GL_RGBA16F, GL_RGBA, GL_FLOAT);                         // Front-XY-Normal
+    fboFront.attachBuffer(FBO_AUX1, GL_RGBA16F, GL_RGBA, GL_FLOAT);                         // Front-XY-Normal-And-TexCoords
     fboFront.attachBuffer(FBO_AUX2, GL_RGB32F, GL_RGB, GL_FLOAT);                           // World pos
 
     Framebuffer2D fboLight(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboLight.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Surface radiance
     fboLight.attachBuffer(FBO_AUX1, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Subsurface radiance
 
+    Framebuffer2D fboBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
+    fboBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
+        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_TRUE);                                       // Blured version of 
+
     Framebuffer2D fboFinal(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
-        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_TRUE);                                       // Final intensities
+    fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT);                           // Final radiance
 
     lights.push_back(new Spotlight());
     lights[0]->setPosition(vec3(-0.2,0.5,-1.2));
@@ -140,7 +142,6 @@ int main()
     int uniformLoc;
 
     glClearColor(0.0,0.0,0.0,0.0);
-    glClearStencil( 0 );
     glEnable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
 
@@ -157,25 +158,8 @@ int main()
         glColorMask(0,0,0,0);
 
         glClearDepth(1.0);
-        glCullFace(GL_FRONT);
-        glDepthFunc(GL_LESS);
 
         depthShader.bind();
-
-        // BACK DEPTH PASS
-
-        fboBack.bind();
-
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        glUniformMatrix4fv(depthShader.getViewMatrixLocation(), 1, false, glm::value_ptr(modelViewMatrix));
-        glUniformMatrix4fv(depthShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
-
-        drawScene();
-
-        fboBack.unbind();
-
-        // END BACK DEPTH PASS
 
         glClearDepth(1.0);
         glCullFace(GL_BACK);
@@ -204,11 +188,6 @@ int main()
 
         // END LIGHT DEPTH PASS
 
-        //glEnable( GL_STENCIL_TEST );
-        //glStencilFunc( GL_ALWAYS, 1, 1 );
-        //glStencilOp( GL_REPLACE, GL_REPLACE, GL_REPLACE );
-
-        glDepthMask(1);
         glColorMask(1,1,1,1);
 
         // FRONT PASS
@@ -269,7 +248,7 @@ int main()
         lightShader.bind();
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX2));
+        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_DEPTH));
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
@@ -290,14 +269,19 @@ int main()
 
         glUniformMatrix4fv(lightShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
 
+        uniformLoc = lightShader.getUniformLocation("invViewMatrix");
+        if(uniformLoc > -1)
+            glUniformMatrix4fv(uniformLoc, 1, false, glm::value_ptr(cam.getInverseViewMatrix()));
+
+        glActiveTexture(GL_TEXTURE2);
+
         for(size_t i=0; i<lights.size(); ++i)
         {
-            glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, lights[i]->getShadowMap());
             
             if(textureMatrixLoc > -1)
             {
-                textureMatrix = lights[i]->getTextureMatrix();// * modelMatrix;
+                textureMatrix = lights[i]->getTextureMatrix() * cam.getInverseViewMatrix();
                 glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(textureMatrix));
             }
 
@@ -314,66 +298,6 @@ int main()
         glDisable(GL_BLEND);
 
         // END LIGHT PASS
-
-        glActiveTexture(GL_TEXTURE0);
-
-        // LIGHT BLUR
-
-        for(int i=0; i<NUM_LIGHT_BLUR_PASSES; i++)
-        {
-            // use as tempbuffer
-            fboFinal.bind();
-
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            hBlurShader.bind();
-
-            glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX0));
-
-            textureLoc = hBlurShader.getUniformLocation("texture0");
-            if(textureLoc > -1)
-                glUniform1i(textureLoc, 0);
-
-            uniformLoc = hBlurShader.getUniformLocation("width");
-            if(uniformLoc > -1)
-                glUniform1i(uniformLoc, WINDOW_WIDTH);
-
-            uniformLoc = hBlurShader.getUniformLocation("height");
-            if(uniformLoc > -1)
-                glUniform1i(uniformLoc, WINDOW_HEIGHT);
-
-            // draw!
-            fsquad.draw();
-
-            hBlurShader.unbind();
-            fboFinal.unbind();
-
-            fboLight.bind();
-            vBlurShader.bind();
-
-            glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
-
-            textureLoc = vBlurShader.getUniformLocation("texture0");
-            if(textureLoc > -1)
-                glUniform1i(textureLoc, 0);
-
-            uniformLoc = vBlurShader.getUniformLocation("width");
-            if(uniformLoc > -1)
-                glUniform1i(uniformLoc, WINDOW_WIDTH);
-
-            uniformLoc = vBlurShader.getUniformLocation("height");
-            if(uniformLoc > -1)
-                glUniform1i(uniformLoc, WINDOW_HEIGHT);
-
-            // draw!
-            fsquad.draw();
-
-            vBlurShader.unbind();
-            fboLight.unbind();
-
-        }
-
-        // END LIGHT BLUR
 
         // COMPOSIT PASS
 
@@ -447,7 +371,10 @@ int main()
             glClear(GL_COLOR_BUFFER_BIT);
             hBlurShader.bind();
 
-            glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
+            if(i == 0)
+                glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
+            else
+                glBindTexture(GL_TEXTURE_2D, fboBlur.getBufferHandle(FBO_AUX0));
 
             textureLoc = hBlurShader.getUniformLocation("texture0");
             if(textureLoc > -1)
@@ -467,7 +394,7 @@ int main()
             hBlurShader.unbind();
             fboLight.unbind();
 
-            fboFinal.bind();
+            fboBlur.bind();
             vBlurShader.bind();
 
             glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX0));
@@ -488,7 +415,7 @@ int main()
             fsquad.draw();
 
             vBlurShader.unbind();
-            fboFinal.unbind();
+            fboBlur.unbind();
         }
 
         // END HDR-BLUR PASS
@@ -506,6 +433,9 @@ int main()
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, fboBlur.getBufferHandle(FBO_AUX0));
         glGenerateMipmap(GL_TEXTURE_2D);
         //glBindTexture(GL_TEXTURE_2D, lights[0]->getShadowMap());
         //glBindTexture(GL_TEXTURE_2D, testTexture);
@@ -517,6 +447,10 @@ int main()
         textureLoc = tonemapShader.getUniformLocation("texture0");
         if(textureLoc>-1)
             glUniform1i(textureLoc, 0);
+
+        textureLoc = tonemapShader.getUniformLocation("texture1");
+        if(textureLoc>-1)
+            glUniform1i(textureLoc, 1);
 
         fsquad.draw();
 

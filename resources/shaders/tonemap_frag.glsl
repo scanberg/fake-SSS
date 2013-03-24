@@ -1,6 +1,7 @@
 #version 150
 
 uniform sampler2D texture0;
+uniform sampler2D texture1;
 
 in vec2 TexCoord;
 
@@ -43,15 +44,14 @@ vec3 gaussianSampler(sampler2D tex, vec2 coord, float lod)
 
 void main(void)
 {
-	vec3 texColor;
-	texColor = texture(texture0, TexCoord).rgb;
-	texColor += gaussianSampler(texture0, TexCoord, 1.0);
-	texColor += gaussianSampler(texture0, TexCoord, 2.0);
-	texColor += gaussianSampler(texture0, TexCoord, 3.0);
-	//texColor += 0.5*textureLod(texture0, TexCoord, 0.5).rgb;
-	//texColor += 0.5*textureLod(texture0, TexCoord, 2.5).rgb;
-	//texColor += 0.5*textureLod(texture0, TexCoord, 4.5).rgb;
-	//texColor += 0.5*textureLod(texture0, TexCoord, 4.5).rgb;
+	vec3 texColor = texture(texture0, TexCoord).rgb;
+	vec3 bloomColor = vec3(0.0f);
+
+	bloomColor += textureLod(texture1, TexCoord, 0).rgb;
+	bloomColor += textureLod(texture1, TexCoord, 1).rgb;
+	bloomColor += textureLod(texture1, TexCoord, 2).rgb;
+	bloomColor += textureLod(texture1, TexCoord, 3).rgb;
+	bloomColor += textureLod(texture1, TexCoord, 4).rgb;
 
 	// Hardcoded Exposure Adjustment
 	//texColor *= 2.0;
@@ -59,7 +59,11 @@ void main(void)
 
 	vec3 whiteScale = 1.0f/Uncharted2Tonemap(vec3(W));
 
-	vec3 curr = Uncharted2Tonemap(ExposureBias*texColor);
+	const float bloom = 0.5;
+
+	vec3 final = texColor + bloom * bloomColor;
+
+	vec3 curr = Uncharted2Tonemap(ExposureBias*final);
 	
 	vec3 color = curr*whiteScale;
 

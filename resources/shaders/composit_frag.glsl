@@ -188,17 +188,17 @@ float linearizeDepth(float d)
   return -2.0 * camRange.x * camRange.y / (camRange.y + camRange.x - z_n * (camRange.y - camRange.x));
 }
 
-vec3 calcScreenSpaceCoords(float d)
+vec3 calcViewSpaceCoords(float d)
 {
   float top = tan(camFov * HALF_RAD);
   float right = camRatio * top;
   vec2 adjustProj = vec2(-right, top);
 
-  vec3 screenCoord = vec3((TexCoord.x-0.5) * 2.0, (-TexCoord.y+0.5) * 2.0, linearizeDepth(d));
+  vec3 viewCoord = vec3((TexCoord.x-0.5) * 2.0, (-TexCoord.y+0.5) * 2.0, linearizeDepth(d));
 
-  screenCoord.xy *= screenCoord.z * adjustProj;
+  viewCoord.xy *= viewCoord.z * adjustProj;
 
-  return screenCoord;
+  return viewCoord;
 }
 
 float sampleNoise( vec3 coord ) {
@@ -223,22 +223,12 @@ float aastep(float threshold, float value)
   return smoothstep(threshold-afwidth, threshold+afwidth, value);
 }
 
-
 const vec3 upperColor = vec3(0.0,0.0,0.5);
 const vec3 lowerColor = vec3(0.3,0.0,0.0);
 
 vec3 colorMap(float val)
 {
-  return val * lowerColor + (1.0 - lowerColor) * upperColor;
-}
-
-vec3 sampleVein(vec3 coord, vec2 texCoord, float veinThickness, float frequency, float offset)
-{
-  float halfVeinThickness = veinThickness * 0.5;
-  float val = frequency + snoise(coord*70);
-  vec3 value = vec3( aastep(0.4,abs(fract(val) - offset)) );
-  value = vec3(snoise(coord*30));
-  return value;
+  return mix(lowerColor, upperColor, val);
 }
 
 void main(void)
@@ -249,20 +239,18 @@ void main(void)
   vec3 backLight = texture(texture3, TexCoord).rgb;
   vec4 normalXYandST = texture(texture4, TexCoord);
 
-  vec3 screenCoord;
-
-  screenCoord = calcScreenSpaceCoords(frontDepth);
-  vec3 worldFrontCoord = vec3(invViewMatrix * vec4(screenCoord,1.0));
+  vec3 viewCoord = calcViewSpaceCoords(frontDepth);
+  vec3 worldCoord = vec3(invViewMatrix * vec4(viewCoord,1.0));
 
   const int SAMPLES = 3;
   const float WEIGHT_SCALE = 0.5;
-  const float stepsize = 0.010;
+  const float stepsize = 0.008;
 
-  vec3 direction = normalize(worldFrontCoord - camPos);
+  vec3 direction = normalize(worldCoord - camPos);
 
   float noise = 0.0;
   float weight = 0.7;
-  vec3 sampleCoord = worldFrontCoord + stepsize * direction;
+  vec3 sampleCoord = worldCoord + stepsize * direction;
 
   if(weight > 0.0)
   {

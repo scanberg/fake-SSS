@@ -75,7 +75,7 @@ public:
     VertexBank()
     {
         indexCounter = 0;
-        uniqueVertex.reserve(100000);
+        uniqueVertex.reserve(10000);
     };
 
     bool isUnique(int v, int n, int t, int &index)
@@ -138,10 +138,13 @@ private:
 
 size_t insertUnique(std::vector<vec2> &vec, const vec2 &item)
 {
-    for(size_t i = 0; i<vec.size(); ++i)
+    for(size_t i=0; i<vec.size(); ++i)
     {
         if(vec[i] == item)
+        {
+            printf("not unique! \n");
             return i;
+        }
     }
 
     vec.push_back(item);
@@ -150,10 +153,13 @@ size_t insertUnique(std::vector<vec2> &vec, const vec2 &item)
 
 size_t insertUnique(std::vector<vec3> &vec, const vec3 &item)
 {
-    for(size_t i = 0; i<vec.size(); ++i)
+    for(size_t i=0; i<vec.size(); ++i)
     {
         if(vec[i] == item)
+        {
+            printf("not unique! \n");
             return i;
+        }
     }
 
     vec.push_back(item);
@@ -182,8 +188,8 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
     std::vector<vec3> tempNormal;
     std::vector<vec2> tempTexCoord;
 
-    tempVertex.reserve(100000);
-    tempNormal.reserve(100000);
+    tempVertex.reserve(10000);
+    tempNormal.reserve(10000);
     tempTexCoord.reserve(10000);
     
     std::vector<std::vector<int> > vertexUsed;
@@ -223,35 +229,37 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
         }
         else if(param == "f")
         {
-            ivec4 vdata(-1), vtdata(-1), ndata(-1), fdata(-1);
+            ivec4 vdata(-1), tdata(-1), ndata(-1), fdata(-1);
 
             for(int i=0; i<token.size()-1; ++i)
             {
                 param = token.getToken();
-                getIndices(param, vdata[i], vtdata[i], ndata[i], hasVertex, hasTexCoord, hasNormal);
+                getIndices(param, vdata[i], tdata[i], ndata[i], hasVertex, hasTexCoord, hasNormal);
 
                 int remappedV = (vdata[i] > -1) ? vdata[i] : -1;
-                int remappedN = (ndata[i] > -1) ? ndata[i] : -1;;
-                int remappedVT = (vtdata[i] > -1) ? vtdata[i] : -1;
+                int remappedN = (ndata[i] > -1) ? ndata[i] : -1;
+                int remappedT = (tdata[i] > -1) ? tdata[i] : -1;
 
                 int index;
                 //printf("Checking vertex uniqueness \n");
-                if(vb.isUnique(remappedV, remappedN, remappedVT, index))
+                if(vb.isUnique(remappedV, remappedN, remappedT, index))
                 {
                     index = g.getVertexSize();
 
                     Geometry::sVertex tv;
-                    tv.position = tempVertex[ vertexRemap[ vdata[i] ] ];
 
-                    if(vtdata[i]>-1 && !(flags & LOADOBJ_IGNORE_TEXCOORDS))
+                    assert( remappedV < tempVertex.size() );
+                    tv.position = tempVertex[ remappedV ];
+
+                    if(remappedT > -1)
                     {
-                        assert( texCoordRemap[ vtdata[i] ] < tempTexCoord.size() );
-                        tv.texCoord = tempTexCoord[ texCoordRemap[ vtdata[i] ] ];
+                        assert( remappedT < tempTexCoord.size() );
+                        tv.texCoord = tempTexCoord[ remappedT ];
                     }
-                    if(ndata[i]>-1 && !(flags & LOADOBJ_IGNORE_NORMALS))
+                    if(remappedN > -1)
                     {
-                        assert( normalRemap[ ndata[i] ] < tempNormal.size() );
-                        tv.normal = tempNormal[ normalRemap[ ndata[i] ] ];
+                        assert( remappedN < tempNormal.size() );
+                        tv.normal = tempNormal[ remappedN ];
                     }
 
                     g.addVertex(tv);
