@@ -12,6 +12,7 @@ out vec3 out_Tonemapped;
 
 const float W = 11.2;
  
+// http://filmicgames.com/archives/75
 vec3 Uncharted2Tonemap(vec3 x)
 {
 	const float A = 0.15;
