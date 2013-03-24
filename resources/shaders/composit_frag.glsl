@@ -1,3 +1,5 @@
+// Composit shader, composes the image from lightintensities and albedo
+
 #version 150
 
 //
@@ -166,7 +168,7 @@ uniform sampler2D texture2;
 uniform sampler2D texture3;
 uniform sampler2D texture4;
 
-uniform mat4 invViewMatrix;
+uniform mat4 invModelViewMatrix;
 
 uniform vec3 camPos;
 uniform vec2 camRange = vec2(0.1,100.0);
@@ -195,7 +197,6 @@ vec3 calcViewSpaceCoords(float d)
   vec2 adjustProj = vec2(-right, top);
 
   vec3 viewCoord = vec3((TexCoord.x-0.5) * 2.0, (-TexCoord.y+0.5) * 2.0, linearizeDepth(d));
-
   viewCoord.xy *= viewCoord.z * adjustProj;
 
   return viewCoord;
@@ -223,11 +224,11 @@ float aastep(float threshold, float value)
   return smoothstep(threshold-afwidth, threshold+afwidth, value);
 }
 
-const vec3 upperColor = vec3(0.0,0.0,0.5);
-const vec3 lowerColor = vec3(0.3,0.0,0.0);
-
 vec3 colorMap(float val)
 {
+  const vec3 upperColor = vec3(0.0,0.0,0.5);
+  const vec3 lowerColor = vec3(0.3,0.0,0.0);
+
   return mix(lowerColor, upperColor, val);
 }
 
@@ -237,14 +238,13 @@ void main(void)
   vec3 albedo = texture(texture1, TexCoord).rgb;
   vec3 frontLight = texture(texture2, TexCoord).rgb;
   vec3 backLight = texture(texture3, TexCoord).rgb;
-  vec4 normalXYandST = texture(texture4, TexCoord);
 
   vec3 viewCoord = calcViewSpaceCoords(frontDepth);
-  vec3 worldCoord = vec3(invViewMatrix * vec4(viewCoord,1.0));
+  vec3 worldCoord = vec3(invModelViewMatrix * vec4(viewCoord,1.0));
 
   const int SAMPLES = 3;
   const float WEIGHT_SCALE = 0.5;
-  const float stepsize = 0.008;
+  const float stepsize = 0.01;
 
   vec3 direction = normalize(worldCoord - camPos);
 
@@ -264,8 +264,10 @@ void main(void)
 
   out_Radiance = vec3(0.0);
 
-  const float backLightNoiseWeight = 1.0;
-  const float frontLightNoiseWeight = 0.2;
+  const float backLightNoiseWeight = 0.95;
+  const float frontLightNoiseWeight = 0.27;
+
+  backLight *= 1.0;
 
   out_Radiance += (backLightNoiseWeight * noise + ( 1.0 - backLightNoiseWeight ) ) * backLight;
   out_Radiance += (frontLightNoiseWeight * noise +  ( 1.0 - frontLightNoiseWeight ) ) * frontLight;

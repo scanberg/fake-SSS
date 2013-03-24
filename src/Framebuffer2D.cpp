@@ -10,17 +10,14 @@ Framebuffer2D::Framebuffer2D(int width, int height)
     this->width = width;
     this->height = height;
 
-    logErrorsGL();
-    
-    glGenFramebuffers(1, &fboHandle);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
-
-    glDrawBuffer(GL_NONE);
-
     numAuxBuffers = 0;
     auxBuffers = NULL;
 
+    logErrorsGL();
+    
+    glGenFramebuffers(1, &fboHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
+    glDrawBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -158,19 +155,8 @@ bool Framebuffer2D::bufferIsValid(unsigned char buffer)
 
 unsigned int *Framebuffer2D::getTextureHandle(unsigned char buffer)
 {
-    // static unsigned int * handleMap[FBO_COUNT] = {
-    //     &auxHandle[FBO_AUX0],
-    //     &auxHandle[FBO_AUX1],
-    //     &auxHandle[FBO_AUX2],
-    //     &auxHandle[FBO_AUX3],
-    //     &depthHandle
-    // };
-
     buffer = clamp(buffer,0,FBO_COUNT-1);
-
     return &bufferHandle[buffer];
-
-    //return handleMap[buffer];
 }
 
 GLenum Framebuffer2D::getGLAttachment(unsigned char buffer)
@@ -184,7 +170,7 @@ GLenum Framebuffer2D::getGLAttachment(unsigned char buffer)
     };
 
     // ASSERT THIS!
-    //buffer = clamp(buffer,0,FBO_COUNT-1);
+    buffer = clamp(buffer,0,FBO_COUNT-1);
 
     return attachmentMap[buffer];
 }

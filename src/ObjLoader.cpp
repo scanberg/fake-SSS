@@ -234,7 +234,10 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
             for(int i=0; i<token.size()-1; ++i)
             {
                 param = token.getToken();
-                getIndices(param, vdata[i], tdata[i], ndata[i], hasVertex, hasTexCoord, hasNormal);
+                getIndices(param, vdata[i], tdata[i], ndata[i],
+                    hasVertex,
+                    hasTexCoord && !(flags & LOADOBJ_IGNORE_TEXCOORDS),
+                    hasNormal && !(flags & LOADOBJ_IGNORE_NORMALS) );
 
                 int remappedV = (vdata[i] > -1) ? vdata[i] : -1;
                 int remappedN = (ndata[i] > -1) ? ndata[i] : -1;

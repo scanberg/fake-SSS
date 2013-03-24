@@ -20,6 +20,8 @@ uniform vec2 camRange = vec2(0.1,100.0);
 uniform float camRatio = 1024.0/768.0;
 uniform float camFov = 60.0;
 
+uniform float density = 100.0;
+
 in vec2 TexCoord;
 in vec3 LightDirViewSpace;
 
@@ -100,16 +102,14 @@ void main(void)
 	float textureDepth = texture(texture2, coord.xy).r;
 
 	// Calculate the distance through the material at the fragments location towards the spotlight
-	//float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
-	float lightDepth = textureDepth;
-	//float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
-	float fragDepthFromLight = coord.z;
+	float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
+	float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
+
 	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
 
-	float sigma = 50.0;
+	float sigma = pow(density*10.0,2.0);
 	vec3 insideColor = vec3(1.0,0.0,0.0);
 
-	//deltaDepth = max(0.0, deltaDepth);
 	float scatterTerm = exp(-(deltaDepth) * sigma);
 	vec3 subSurfaceContrib = scatterTerm * insideColor * spotLightContrib  * max(0.0, -cosTerm);
 

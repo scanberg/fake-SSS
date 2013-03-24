@@ -13,21 +13,39 @@
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
-#define NUM_HDR_BLUR_PASSES 2
+#define NUM_HDR_BLUR_PASSES 1
 
+#define EXPOSURE_MIN 0.1
+#define EXPOSURE_MAX 10.0
+#define EXPOSURE_INC 0.1
+
+#define BLOOM_MIN 0.1
+#define BLOOM_MAX 1.0
+#define BLOOM_INC 0.1
+
+#define DENSITY_MIN 0.0
+#define DENSITY_MAX 2.0
+#define DENSITY_INC 0.05
+
+#define ROTATION_SPEED 0.1
+
+void modifyScene(mat4 &m);
 void modifyCamera(Camera *cam);
-// void createFBO();
-// void destroyFBO();
 void loadTexture(const char *filename, GLuint texID);
-void setLightUniforms();
 
 void drawScene();
+void calcFPS();
+void GLFWCALL keyCallback(int key, int action);
 
 GLuint fbo;
 GLuint depthMap;
 Geometry head;
 Geometry plane;
 std::vector<Spotlight*> lights;
+
+float g_exposure;
+float g_bloom;
+float g_density;
 
 int main()
 {
@@ -41,10 +59,14 @@ int main()
         return 0;
     }
 
-    //float time;
+    glfwSetKeyCallback(keyCallback);
+
+    g_exposure = 2.2;
+    g_bloom = 0.3;
+    g_density = 0.9;
+
     int timeLoc;
     int textureLoc;
-    //int textureSizeLoc;
 
     GLuint testTexture = 0;
     GLuint colorMap = 0;
@@ -54,14 +76,11 @@ int main()
     glGenTextures(1, &colorMap);
     glGenTextures(1, &normalMap);
 
-    //Framebuffer2D fboBack(WINDOW_WIDTH, WINDOW_HEIGHT);
-    //fboBack.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
-
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
     fboFront.attachBuffer(FBO_AUX0, GL_RGB8, GL_RGB, GL_FLOAT);                             // Front-Albedo
     fboFront.attachBuffer(FBO_AUX1, GL_RGBA16F, GL_RGBA, GL_FLOAT);                         // Front-XY-Normal-And-TexCoords
-    fboFront.attachBuffer(FBO_AUX2, GL_RGB32F, GL_RGB, GL_FLOAT);                           // World pos
+    //fboFront.attachBuffer(FBO_AUX2, GL_RGB32F, GL_RGB, GL_FLOAT);                           // World pos
 
     Framebuffer2D fboLight(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboLight.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Surface radiance
@@ -69,31 +88,31 @@ int main()
 
     Framebuffer2D fboBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
-        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_TRUE);                                       // Blured version of 
+        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_TRUE);                                       // Blured version of final
 
     Framebuffer2D fboFinal(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT);                           // Final radiance
 
     lights.push_back(new Spotlight());
-    lights[0]->setPosition(vec3(-0.2,0.5,-1.2));
+    lights[0]->setPosition(vec3(0.1,0.4,-1.5));
     lights[0]->setLookAt(vec3(0,0.3,0));
-    lights[0]->setColor(vec3(1.0,0.9,0.9));
-    lights[0]->setLumen(4);
+    lights[0]->setColor(vec3(1.0,1.0,1.0));
+    lights[0]->setLumen(5);
     lights[0]->setOuterAngle(35.0);
 
-    lights.push_back(new Spotlight());
-    lights[1]->setPosition(vec3(0.2,0.5,-1.2));
-    lights[1]->setLookAt(vec3(0,0.3,0));
-    lights[1]->setColor(vec3(0.9,0.9,1.0));
-    lights[1]->setLumen(4);
-    lights[1]->setOuterAngle(35.0);
+    // lights.push_back(new Spotlight());
+    // lights[1]->setPosition(vec3(0.2,0.4,-1.5));
+    // lights[1]->setLookAt(vec3(0,0.3,0));
+    // lights[1]->setColor(vec3(1.0,1.0,1.0));
+    // lights[1]->setLumen(4);
+    // lights[1]->setOuterAngle(35.0);
 
     lights.push_back(new Spotlight());
-    lights[2]->setPosition(vec3(0.0,0.4,1.5));
-    lights[2]->setLookAt(vec3(0,0.3,0));
-    lights[2]->setColor(vec3(1.0,1.0,1.0));
-    lights[2]->setLumen(5);
-    lights[2]->setOuterAngle(35.0);
+    lights[1]->setPosition(vec3(0.0,0.4,1.5));
+    lights[1]->setLookAt(vec3(0,0.3,0));
+    lights[1]->setColor(vec3(1.0,0.8,0.8));
+    lights[1]->setLumen(5);
+    lights[1]->setOuterAngle(35.0);
 
     Camera cam;
     vec3 lookPos(0,0.3,0);
@@ -101,6 +120,7 @@ int main()
     cam.lookAt(&lookPos);
 
     mat4 modelMatrix(1.0), modelViewMatrix(1.0);
+    mat4 inverseModelMatrix(1.0), inverseModelViewMatrix(1.0);
     mat4 textureMatrix;
 
     Shader linearDepthShader("resources/shaders/linearDepth_vert.glsl", "resources/shaders/linearDepth_frag.glsl");
@@ -115,7 +135,7 @@ int main()
     Shader compositShader("resources/shaders/basic_vert.glsl", "resources/shaders/composit_frag.glsl");
     Shader tonemapShader("resources/shaders/basic_vert.glsl", "resources/shaders/tonemap_frag.glsl");
 
-    loadObj(head,"resources/meshes/head1.obj", 2.0f);
+    loadObj(head,"resources/meshes/head.obj", 2.0f);
     head.translate(vec3(0,0.3,0));
     head.createStaticBuffers();
 
@@ -147,23 +167,24 @@ int main()
 
     while(true)
     {
+        calcFPS();
+        modifyScene(modelMatrix);
         modifyCamera(&cam);
+
         cam.setup();
         modelViewMatrix = cam.getViewMatrix() * modelMatrix;
-        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        inverseModelMatrix = glm::inverse(modelMatrix);
+        inverseModelViewMatrix = inverseModelMatrix * cam.getInverseViewMatrix();
 
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         glEnable(GL_DEPTH_TEST);
-        
         glDepthMask(1);
         glColorMask(0,0,0,0);
-
-        glClearDepth(1.0);
-
-        depthShader.bind();
-
         glClearDepth(1.0);
         glCullFace(GL_BACK);
         glDepthFunc(GL_LESS);
+
+        depthShader.bind();
 
         // LIGHT DEPTH PASS
 
@@ -273,6 +294,10 @@ int main()
         if(uniformLoc > -1)
             glUniformMatrix4fv(uniformLoc, 1, false, glm::value_ptr(cam.getInverseViewMatrix()));
 
+        uniformLoc = lightShader.getUniformLocation("density");
+        if(uniformLoc > -1)
+            glUniform1f(uniformLoc, g_density);
+
         glActiveTexture(GL_TEXTURE2);
 
         for(size_t i=0; i<lights.size(); ++i)
@@ -340,13 +365,9 @@ int main()
         if(textureLoc > -1)
             glUniform1i(textureLoc, 3);
 
-        textureLoc = compositShader.getUniformLocation("texture4");
-        if(textureLoc > -1)
-            glUniform1i(textureLoc, 4);
-
-        uniformLoc = compositShader.getUniformLocation("invViewMatrix");
+        uniformLoc = compositShader.getUniformLocation("invModelViewMatrix");
         if(uniformLoc > -1)
-            glUniformMatrix4fv(uniformLoc, 1, false, glm::value_ptr(cam.getInverseViewMatrix()));
+            glUniformMatrix4fv(uniformLoc, 1, false, glm::value_ptr(inverseModelViewMatrix));
 
         uniformLoc = compositShader.getUniformLocation("camPos");
         if(uniformLoc > -1)
@@ -421,10 +442,8 @@ int main()
         // END HDR-BLUR PASS
 
         // DRAW TO SCREEN
-
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-        // Draw to screen
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDrawBuffer(GL_BACK);
 
@@ -437,13 +456,9 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, fboBlur.getBufferHandle(FBO_AUX0));
         glGenerateMipmap(GL_TEXTURE_2D);
-        //glBindTexture(GL_TEXTURE_2D, lights[0]->getShadowMap());
-        //glBindTexture(GL_TEXTURE_2D, testTexture);
 
-        //basicShader.bind();
         tonemapShader.bind();
 
-        //textureLoc = basicShader.getUniformLocation("texture0");
         textureLoc = tonemapShader.getUniformLocation("texture0");
         if(textureLoc>-1)
             glUniform1i(textureLoc, 0);
@@ -452,12 +467,20 @@ int main()
         if(textureLoc>-1)
             glUniform1i(textureLoc, 1);
 
+        uniformLoc = tonemapShader.getUniformLocation("exposure");
+        if(uniformLoc>-1)
+            glUniform1f(uniformLoc, g_exposure);
+
+        uniformLoc = tonemapShader.getUniformLocation("bloom");
+        if(uniformLoc>-1)
+            glUniform1f(uniformLoc, g_bloom);
+
         fsquad.draw();
 
         tonemapShader.unbind();
 
         engine->swapBuffers();
-        if(!glfwGetWindowParam(GLFW_OPENED) || glfwGetKey(GLFW_KEY_ESC) || glfwGetKey('Q'))
+        if(!glfwGetWindowParam(GLFW_OPENED) || glfwGetKey(GLFW_KEY_ESC))
 			break;
     }
 
@@ -468,8 +491,6 @@ int main()
 
     //clean up
     delete engine;
-
-    // destroyFBO();
 
     return 0;
 }
@@ -530,7 +551,58 @@ void loadTexture(const char *filename, GLuint texID) {
     glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
-void setLightUniforms()
+void GLFWCALL keyCallback(int key, int action)
 {
+    if(key == 'W' && action == GLFW_PRESS)
+    {
+        g_exposure = glm::clamp(g_exposure + EXPOSURE_INC, EXPOSURE_MIN, EXPOSURE_MAX);
+    }
+    else if(key == 'S' && action == GLFW_PRESS)
+    {
+        g_exposure = glm::clamp(g_exposure - EXPOSURE_INC, EXPOSURE_MIN, EXPOSURE_MAX);
+    }
+    else if (key == 'E' && action == GLFW_PRESS)
+    {
+        g_bloom = glm::clamp(g_bloom + BLOOM_INC, BLOOM_MIN, BLOOM_MAX);
+    }
+    else if(key == 'D' && action == GLFW_PRESS)
+    {
+        g_bloom = glm::clamp(g_bloom - BLOOM_INC, BLOOM_MIN, BLOOM_MAX);
+    }
+    else if (key == 'R' && action == GLFW_PRESS)
+    {
+        g_density = glm::clamp(g_density + DENSITY_INC, DENSITY_MIN, DENSITY_MAX);
+    }
+    else if(key == 'F' && action == GLFW_PRESS)
+    {
+        g_density = glm::clamp(g_density - DENSITY_INC, DENSITY_MIN, DENSITY_MAX);
+    }
+}
 
+void calcFPS()
+{
+    static double t0=0.0;
+    static int frameCount=0;
+    static char title[256];
+
+    double t = glfwGetTime();
+
+    if( (t - t0) > 0.25 )
+    {
+        double fps = (double)frameCount / (t - t0);
+        frameCount = 0;
+        t0 = t;
+
+        sprintf(title, "Fake-SSS FPS: %3.1f, Exposure(W/S): %2.1f, Bloom(E/D) %1.1f, Density(R/F) %1.2f", fps, g_exposure, g_bloom, g_density);
+        glfwSetWindowTitle(title);
+    }
+    frameCount++;
+}
+
+void modifyScene( mat4 &m )
+{
+    static float angle = 0.0;
+    angle += ROTATION_SPEED;
+
+    m = glm::rotate(mat4(), angle, vec3(0.0,1.0,0.0));
 }

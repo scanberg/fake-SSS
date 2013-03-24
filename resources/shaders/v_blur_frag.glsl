@@ -1,3 +1,7 @@
+// Vertical gaussian blur shader
+// Credits to Daniel Rákos
+// http://rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/
+
 #version 150
 
 uniform sampler2D texture0;
