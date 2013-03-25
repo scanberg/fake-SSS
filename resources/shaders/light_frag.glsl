@@ -61,16 +61,16 @@ void main(void)
 	viewSpaceNormal.z = sqrt(1.0 - dot(viewSpaceNormal.xy, viewSpaceNormal.xy));
 	viewSpaceNormal = normalize(viewSpaceNormal);
 
-	vec3 lightDirViewSpace = normalize(vec3( viewMatrix * vec4(spotlightDir.xyz, 0.0) ));
+	vec3 lightDirViewSpace = LightDirViewSpace;
 
-	//vec4 shadowProj = textureMatrix * vec4(worldCoord, 1.0);
-	vec4 shadowProj = textureMatrix * vec4(viewCoord, 1.0);
-	vec3 coord = shadowProj.xyz/shadowProj.w;
+	//vec4 shadowCoord = textureMatrix * vec4(worldCoord, 1.0);
+	vec4 shadowCoord = textureMatrix * vec4(viewCoord, 1.0);
+	vec3 coord = shadowCoord.xyz/shadowCoord.w;
 
 	vec3 lightToFrag = (worldCoord - spotlightPos.xyz);
 
 	float lightToFragDist = length(lightToFrag);
-	//lightToFragDist = shadowProj.z;
+	//lightToFragDist = shadowCoord.z;
 
 	vec3 L = lightToFrag / lightToFragDist;
 	vec3 D = spotlightDir.xyz;
@@ -79,7 +79,7 @@ void main(void)
 	float lightInnerAngle = spotlightDir.w;
 
 	float cur_angle = dot(L,D);
-	//cur_angle = dot(normalize(shadowProj.xyz),vec3(0,0,-1));
+	//cur_angle = dot(normalize(shadowCoord.xyz),vec3(0,0,-1));
 	float inner_angle = cos(lightInnerAngle * 0.5 * RAD);
 	float outer_angle = cos(lightOuterAngle * 0.5 * RAD);
 	float diff_angle = inner_angle - outer_angle;
@@ -102,12 +102,17 @@ void main(void)
 	float textureDepth = texture(texture2, coord.xy).r;
 
 	// Calculate the distance through the material at the fragments location towards the spotlight
-	float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
-	float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
+	float lightDepth = textureDepth;
+	//float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
+	float fragDepthFromLight = coord.z;
+	//float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
 
 	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
 
-	float sigma = pow(density*10.0,2.0);
+	// Map density to a sigma term
+	float sigma = pow(density*10.0,3.0);
+
+	// Should be a uniform based on material type
 	vec3 insideColor = vec3(1.0,0.0,0.0);
 
 	float scatterTerm = exp(-(deltaDepth) * sigma);
@@ -115,7 +120,7 @@ void main(void)
 
 	vec3 surfaceContrib = vec3(0.0);
 
-	if(textureDepth > (shadowProj.z - ShadowDepthOffset)/shadowProj.w)
+	if(textureDepth > (shadowCoord.z - ShadowDepthOffset)/shadowCoord.w)
 		surfaceContrib = max(0.0, cosTerm * 1.2 - 0.2 ) * spotLightContrib;
 
 	out_Radiance[0] = surfaceContrib;

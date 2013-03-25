@@ -14,7 +14,7 @@
 #define hasTexCoord tempTexCoord.size() > 0
 #define hasNormal tempNormal.size() > 0
 
-#define DEBUG
+//#define DEBUG
 
 typedef struct
 {

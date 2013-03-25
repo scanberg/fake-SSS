@@ -23,13 +23,13 @@
 #define BLOOM_MAX 1.0
 #define BLOOM_INC 0.1
 
-#define DENSITY_MIN 0.0
-#define DENSITY_MAX 2.0
-#define DENSITY_INC 0.05
+#define DENSITY_MIN 0.5
+#define DENSITY_MAX 3.0
+#define DENSITY_INC 0.1
 
 #define ROTATION_SPEED 0.1
 
-void modifyScene(mat4 &m);
+void modifyModel(mat4 &m);
 void modifyCamera(Camera *cam);
 void loadTexture(const char *filename, GLuint texID);
 
@@ -63,7 +63,7 @@ int main()
 
     g_exposure = 2.2;
     g_bloom = 0.3;
-    g_density = 0.7;
+    g_density = 1.0;
 
     int timeLoc;
     int textureLoc;
@@ -78,13 +78,13 @@ int main()
 
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
-    fboFront.attachBuffer(FBO_AUX0, GL_RGB8, GL_RGB, GL_FLOAT);                             // Front-Albedo
+    fboFront.attachBuffer(FBO_AUX0, GL_RGBA8, GL_RGBA, GL_FLOAT);                           // Front-Albedo + Subsurface structure
     fboFront.attachBuffer(FBO_AUX1, GL_RGBA16F, GL_RGBA, GL_FLOAT);                         // Front-XY-Normal-And-TexCoords
-    //fboFront.attachBuffer(FBO_AUX2, GL_RGB32F, GL_RGB, GL_FLOAT);                           // World pos
 
     Framebuffer2D fboLight(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboLight.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Surface radiance
     fboLight.attachBuffer(FBO_AUX1, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Subsurface radiance
+    fboLight.attachBuffer(FBO_AUX2, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Specular radiance
 
     Framebuffer2D fboBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboBlur.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
@@ -168,7 +168,7 @@ int main()
     while(true)
     {
         calcFPS();
-        modifyScene(modelMatrix);
+        modifyModel(modelMatrix);
         modifyCamera(&cam);
 
         cam.setup();
@@ -239,6 +239,14 @@ int main()
         glUniformMatrix4fv(frontShader.getModelMatrixLocation(), 1, false, glm::value_ptr(modelMatrix));
         glUniformMatrix4fv(frontShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
         glUniformMatrix4fv(frontShader.getProjMatrixLocation(), 1, false, glm::value_ptr(cam.getProjMatrix()));
+
+        uniformLoc = frontShader.getUniformLocation("invModelMatrix");
+        if(uniformLoc > -1)
+            glUniformMatrix4fv(uniformLoc, 1, false, glm::value_ptr(inverseModelMatrix));
+
+        uniformLoc = frontShader.getUniformLocation("camPos");
+        if(uniformLoc > -1)
+            glUniform3fv(uniformLoc, 1, glm::value_ptr(cam.getPosition()));
 
         drawScene();
 
@@ -599,7 +607,7 @@ void calcFPS()
     frameCount++;
 }
 
-void modifyScene( mat4 &m )
+void modifyModel( mat4 &m )
 {
     static float angle = 0.0;
     angle += ROTATION_SPEED;
