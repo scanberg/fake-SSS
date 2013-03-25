@@ -148,10 +148,25 @@ void Geometry::process()
     std::vector<i32> sharedFaces;
     sharedFaces.resize(vertices.size(), 0);
 
-    printf("vertices.size() = %i \n", vertices.size());
-    printf("triangle.size() = %i \n", triangles.size());
+    printf("vertices.size() = %i \n", (int)vertices.size());
+    printf("triangle.size() = %i \n", (int)triangles.size());
 
-    for (u32 i=0; i<triangles.size(); ++i)
+    vec3 center = vec3(0.0);
+
+    // Find geometric center
+    for (size_t i=0; i<vertices.size(); ++i)
+    {
+        center += vertices[i].position;
+    }
+
+    center /= (float)vertices.size();
+
+    for (size_t i=0; i<vertices.size(); ++i)
+    {
+        vertices[i].position -= center;
+    }
+
+    for (size_t i=0; i<triangles.size(); ++i)
     {
         assert(i < triangles.size());
 
@@ -173,7 +188,7 @@ void Geometry::process()
             sharedFaces[triangles[i][u]]++;
         }
     }
-    for (u32 i=0; i<vertices.size(); ++i)
+    for (size_t i=0; i<vertices.size(); ++i)
     {
         if(sharedFaces[i]>0)
         {
@@ -189,7 +204,7 @@ void Geometry::process()
         }
 
         const vec3 & t = tempTangent[i];
-        const vec3 & b = tempNormal[i];
+        const vec3 & n = tempNormal[i];
 
         // Gram-Schmidt orthogonalize
         vertices[i].tangent = glm::normalize(t - n * glm::dot(n, t));
