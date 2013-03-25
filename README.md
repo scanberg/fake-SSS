@@ -2,7 +2,7 @@
 
 1. LIGHT DEPTH PASS, Render depth values of lights that cast shadows
 
-2. FRONT PASS, Render depth, albedo, normal
+2. FRONT PASS, Render depth, albedo + noise, normal
 
 2. LIGHTS PASS, Render all lights into an accumulated buffer using blend(ONE,ONE)
 

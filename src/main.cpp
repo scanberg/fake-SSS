@@ -31,7 +31,7 @@
 
 void modifyModel(mat4 &m);
 void modifyCamera(Camera *cam);
-void loadTexture(const char *filename, GLuint texID);
+void loadTexture(const char *filename, GLuint texID, int flags=0);
 
 void drawScene();
 void calcFPS();
@@ -71,15 +71,17 @@ int main()
     GLuint testTexture = 0;
     GLuint colorMap = 0;
     GLuint normalMap = 0;
+    GLuint specularMap = 0;
 
     glGenTextures(1, &testTexture);
     glGenTextures(1, &colorMap);
     glGenTextures(1, &normalMap);
+    glGenTextures(1, &specularMap);
 
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
     fboFront.attachBuffer(FBO_AUX0, GL_RGBA8, GL_RGBA, GL_FLOAT);                           // Front-Albedo + Subsurface structure
-    fboFront.attachBuffer(FBO_AUX1, GL_RGBA16F, GL_RGBA, GL_FLOAT);                         // Front-XY-Normal-And-TexCoords
+    fboFront.attachBuffer(FBO_AUX1, GL_RGB16F, GL_RGB, GL_FLOAT);                           // Front-XY-Normal + PackedSpecular (exponent + base)
 
     Framebuffer2D fboLight(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboLight.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR, GL_LINEAR);     // Surface radiance
@@ -155,6 +157,7 @@ int main()
     loadTexture("resources/textures/texture.tga", testTexture);
     loadTexture("resources/textures/head.tga", colorMap);
     loadTexture("resources/textures/head_n.tga", normalMap);
+    loadTexture("resources/textures/head_d.tga", specularMap); 
 
     timeLoc = skinShader.getUniformLocation("time");
     textureLoc = skinShader.getUniformLocation("texture0");
@@ -223,10 +226,13 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMap);
 
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
+
         glCullFace(GL_BACK);
         glDepthFunc(GL_LESS);
 
-        glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
         textureLoc = frontShader.getUniformLocation("texture0");
         if(textureLoc > -1)
@@ -235,6 +241,10 @@ int main()
         textureLoc = frontShader.getUniformLocation("texture1");
         if(textureLoc > -1)
             glUniform1i(textureLoc, 1);
+
+        textureLoc = frontShader.getUniformLocation("texture2");
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, 2);
 
         glUniformMatrix4fv(frontShader.getModelMatrixLocation(), 1, false, glm::value_ptr(modelMatrix));
         glUniformMatrix4fv(frontShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
@@ -342,19 +352,16 @@ int main()
         compositShader.bind();
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_DEPTH));
-
-        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX0));
 
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX0));
 
-        glActiveTexture(GL_TEXTURE3);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX1));
 
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, fboLight.getBufferHandle(FBO_AUX2));
 
 
         textureLoc = compositShader.getUniformLocation("texture0");
@@ -497,6 +504,11 @@ int main()
         delete lights[i];
     }
 
+    glDeleteTextures(1, &testTexture);
+    glDeleteTextures(1, &colorMap);
+    glDeleteTextures(1, &normalMap);
+    glDeleteTextures(1, &specularMap);
+
     //clean up
     delete engine;
 
@@ -540,16 +552,27 @@ void drawScene()
  * loadTexture - load 8-bit texture data from a TGA file
  * and set up the corresponding texture object.     //STEGU
  */
-void loadTexture(const char *filename, GLuint texID) {
+void loadTexture(const char *filename, GLuint texID, int flags) {
   
     GLFWimage img; // Use intermediate GLFWimage to get width and height
 
+    logNote("Attempting to load texture %s", filename);
+
     if(!glfwReadImage(filename, &img, GLFW_NO_RESCALE_BIT))
-        logError("texture could not be loaded");
+    {
+        logError("texture-image could not be read");
+        return;
+    }
 
     glBindTexture( GL_TEXTURE_2D, texID );
 
-    glfwLoadTextureImage2D( &img, 0 );
+    if(!glfwLoadTextureImage2D( &img, flags ))
+    {
+        logError("texture could not be loaded");
+        glBindTexture( GL_TEXTURE_2D, 0 );
+        return;
+    }
+
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );

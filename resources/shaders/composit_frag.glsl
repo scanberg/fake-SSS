@@ -21,10 +21,10 @@ vec3 colorMap(float val)
 
 void main(void)
 {
-  float frontDepth = texture(texture0, TexCoord).r;
-  vec4 albedoAndNoise = texture(texture1, TexCoord);
-  vec3 frontLight = texture(texture2, TexCoord).rgb;
-  vec3 backLight = texture(texture3, TexCoord).rgb;
+  vec4 albedoAndNoise = texture(texture0, TexCoord);
+  vec3 frontLight = texture(texture1, TexCoord).rgb;
+  vec3 backLight = texture(texture2, TexCoord).rgb;
+  vec3 specularLight = texture(texture3, TexCoord).rgb;
 
   const float backLightNoiseWeight = 0.95;
   const float frontLightNoiseWeight = 0.27;
@@ -37,5 +37,5 @@ void main(void)
   out_Radiance += (frontLightNoiseWeight * albedoAndNoise.a +  ( 1.0 - frontLightNoiseWeight ) ) * frontLight;
   out_Radiance *= albedoAndNoise.rgb;
 
-  //out_Radiance = vec3(albedoAndNoise.a);
+  out_Radiance += specularLight;
 }

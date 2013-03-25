@@ -25,7 +25,7 @@ uniform float density = 100.0;
 in vec2 TexCoord;
 in vec3 LightDirViewSpace;
 
-out vec3 out_Radiance[2];
+out vec3 out_Radiance[3];
 
 const float RAD = 3.14159265 / 180.0;
 const float HALF_RAD = 3.14159265 / 360.0;
@@ -56,8 +56,9 @@ void main(void)
 {
 	vec3 viewCoord = calcViewSpaceCoords(texture(texture0,TexCoord).r);
 	vec3 worldCoord = vec3(invViewMatrix * vec4(viewCoord,1.0));
+	vec3 normalAndSpec = texture(texture1, TexCoord).rgb;
 
-	vec3 viewSpaceNormal = vec3(texture(texture1, TexCoord).rg, 0.0);
+	vec3 viewSpaceNormal = vec3(normalAndSpec.xy, 0.0);
 	viewSpaceNormal.z = sqrt(1.0 - dot(viewSpaceNormal.xy, viewSpaceNormal.xy));
 	viewSpaceNormal = normalize(viewSpaceNormal);
 
@@ -102,6 +103,7 @@ void main(void)
 	float textureDepth = texture(texture2, coord.xy).r;
 
 	// Calculate the distance through the material at the fragments location towards the spotlight
+
 	float lightDepth = textureDepth;
 	//float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
 	float fragDepthFromLight = coord.z;
@@ -119,10 +121,22 @@ void main(void)
 	vec3 subSurfaceContrib = scatterTerm * insideColor * spotLightContrib  * max(0.0, -cosTerm);
 
 	vec3 surfaceContrib = vec3(0.0);
+	vec3 specularContrib = vec3(0.0);
 
 	if(textureDepth > (shadowCoord.z - ShadowDepthOffset)/shadowCoord.w)
+	{
 		surfaceContrib = max(0.0, cosTerm * 1.2 - 0.2 ) * spotLightContrib;
+
+		// Specular
+		float specularBase = fract(normalAndSpec.z);
+		float specularExp = normalAndSpec.z - specularBase;
+		specularBase /= 0.99;
+
+		vec3 lightReflection = reflect(lightDirViewSpace, viewSpaceNormal);
+		specularContrib = pow(max(0.0, dot(vec3(0,0,1), lightReflection)), specularExp) * specularBase * spotLightContrib;
+	}
 
 	out_Radiance[0] = surfaceContrib;
 	out_Radiance[1] = subSurfaceContrib;
+	out_Radiance[2] = specularContrib;
 }

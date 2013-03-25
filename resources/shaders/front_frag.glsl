@@ -162,8 +162,10 @@ float snoise(vec3 v)
 
 uniform sampler2D texture0; 		// Diffuse color map
 uniform sampler2D texture1;			// Normal map
+uniform sampler2D texture2;     // Specular map
 
 uniform vec3 noiseScale = vec3(20,5,20);
+uniform float specularExp = 10.0;
 
 in vec3 Position;
 in vec3 Normal;
@@ -190,8 +192,12 @@ float sampleNoise( vec3 coord ) {
 
 void main(void)
 {
+  vec3 colorMap = texture(texture0, TexCoord).rgb;
+  vec3 normalMap = texture(texture1, TexCoord).rgb;
+  float specularMap = texture(texture2, TexCoord).a;
+
 	// Transform into [-1, 1]
-	vec3 textureNormal = texture(texture1,TexCoord).rgb * 2.0 - 1.0;
+	vec3 textureNormal = normalMap * 2.0 - 1.0;
 
 	vec3 n = normalize(Normal);
 	vec3 t = normalize(Tangent);
@@ -218,6 +224,9 @@ void main(void)
 		sampleCoord += stepsize * direction;
 	}
 
-	out_Color[0] = vec4(texture(texture0,TexCoord).rgb/2.2, noise);
-	out_Color[1] = vec4(viewSpaceNormal.xy, TexCoord);
+  float flooredExp = specularExp - fract(specularExp);
+  float specularity = 0.1 * 0.99 + flooredExp;
+
+	out_Color[0] = vec4(texture(texture0, TexCoord).rgb/2.2, noise);
+	out_Color[1] = vec4(viewSpaceNormal.xy, specularity, 0.0);
 }
