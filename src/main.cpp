@@ -63,7 +63,7 @@ int main()
 
     g_exposure = 2.2;
     g_bloom = 0.3;
-    g_density = 0.9;
+    g_density = 0.7;
 
     int timeLoc;
     int textureLoc;
@@ -498,7 +498,7 @@ int main()
 void modifyCamera(Camera *cam)
 {
     static int oldMouseX=320, oldMouseY=240, oldMouseZ=1;
-    static vec2 rotAngle;
+    static vec2 rotAngle = vec2(PI,0.5*PI);
     static float dist;
     int mouseX, mouseY, mouseZ;
 
