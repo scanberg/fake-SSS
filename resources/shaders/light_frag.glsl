@@ -9,6 +9,7 @@ uniform mat4 textureMatrix;
 uniform sampler2D texture0;
 uniform sampler2D texture1;
 uniform sampler2D texture2;
+uniform sampler2D texture3;
 
 uniform vec4 spotlightPos;
 uniform vec4 spotlightDir;
@@ -25,7 +26,7 @@ uniform float density = 100.0;
 in vec2 TexCoord;
 in vec3 LightDirViewSpace;
 
-out vec3 out_Radiance[3];
+out vec3 out_frag0;
 
 const float RAD = 3.14159265 / 180.0;
 const float HALF_RAD = 3.14159265 / 360.0;
@@ -56,7 +57,9 @@ void main(void)
 {
 	vec3 viewCoord = calcViewSpaceCoords(texture(texture0,TexCoord).r);
 	vec3 worldCoord = vec3(invViewMatrix * vec4(viewCoord,1.0));
-	vec3 normalAndSpec = texture(texture1, TexCoord).rgb;
+
+	vec4 albedoAndNoise = texture(texture1, TexCoord);
+	vec3 normalAndSpec = texture(texture2, TexCoord).rgb;
 
 	vec3 viewSpaceNormal = vec3(normalAndSpec.xy, 0.0);
 	viewSpaceNormal.z = sqrt(1.0 - dot(viewSpaceNormal.xy, viewSpaceNormal.xy));
@@ -100,10 +103,9 @@ void main(void)
 	vec3 spotLightContrib = spot * att * spotlightColor.rgb;
 
 	// World depth values
-	float textureDepth = texture(texture2, coord.xy).r;
+	float textureDepth = texture(texture3, coord.xy).r;
 
 	// Calculate the distance through the material at the fragments location towards the spotlight
-
 	float lightDepth = textureDepth;
 	//float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
 	float fragDepthFromLight = coord.z;
@@ -113,11 +115,13 @@ void main(void)
 
 	// Map density to a sigma term
 	float sigma = pow(density*10.0,3.0);
+	float scatterTerm = exp(-(deltaDepth) * sigma);
 
 	// Should be a uniform based on material type
 	vec3 insideColor = vec3(1.0,0.0,0.0);
 
-	float scatterTerm = exp(-(deltaDepth) * sigma);
+	// spotLightContrib that is used here is for the front fragment and therefore a cheat,
+	// a new contribution should be calculated from the 'back' fragment as seen from the light.
 	vec3 subSurfaceContrib = scatterTerm * insideColor * spotLightContrib  * max(0.0, -cosTerm);
 
 	vec3 surfaceContrib = vec3(0.0);
@@ -127,7 +131,7 @@ void main(void)
 	{
 		surfaceContrib = max(0.0, cosTerm * 1.2 - 0.2 ) * spotLightContrib;
 
-		// Specular
+		// Unpack specular base and exponent
 		float specularBase = fract(normalAndSpec.z);
 		float specularExp = normalAndSpec.z - specularBase;
 		specularBase /= 0.99;
@@ -136,7 +140,13 @@ void main(void)
 		specularContrib = pow(max(0.0, dot(vec3(0,0,1), lightReflection)), specularExp) * specularBase * spotLightContrib;
 	}
 
-	out_Radiance[0] = surfaceContrib;
-	out_Radiance[1] = subSurfaceContrib;
-	out_Radiance[2] = specularContrib;
+	const float backLightNoiseWeight = 0.90;
+	const float frontLightNoiseWeight = 0.27;
+
+	out_frag0 = vec3(0.0);
+
+	out_frag0 += (backLightNoiseWeight * albedoAndNoise.a + ( 1.0 - backLightNoiseWeight ) ) * subSurfaceContrib;
+	out_frag0 += (frontLightNoiseWeight * albedoAndNoise.a +  ( 1.0 - frontLightNoiseWeight ) ) * surfaceContrib;
+	out_frag0 *= albedoAndNoise.rgb;
+	out_frag0 += specularContrib;
 }

@@ -165,7 +165,7 @@ uniform sampler2D texture1;			// Normal map
 uniform sampler2D texture2;     // Specular map
 
 uniform vec3 noiseScale = vec3(20,5,20);
-uniform float specularExp = 10.0;
+uniform float specularExp = 20.0;
 
 in vec3 Position;
 in vec3 Normal;
@@ -175,7 +175,8 @@ in vec2 TexCoord;
 in vec3 ViewSpaceCoord;
 in vec3 CameraInObjectSpace;
 
-out vec4 out_Color[2];
+out vec4 out_frag0;
+out vec3 out_frag1;
 
 float sampleNoise( vec3 coord ) {
 
@@ -227,6 +228,6 @@ void main(void)
   float flooredExp = specularExp - fract(specularExp);
   float specularity = 0.1 * 0.99 + flooredExp;
 
-	out_Color[0] = vec4(texture(texture0, TexCoord).rgb/2.2, noise);
-	out_Color[1] = vec4(viewSpaceNormal.xy, specularity, 0.0);
+	out_frag0 = vec4(colorMap/2.2, noise);
+	out_frag1 = vec3(viewSpaceNormal.xy, specularity);
 }

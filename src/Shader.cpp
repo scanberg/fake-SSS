@@ -197,11 +197,15 @@ bool Shader::loadAndCompile()
     glAttachShader(program,vertexShader);
     glAttachShader(program,fragmentShader);
  
-    //glBindFragDataLocation(program, 0, "outputF");
     glBindAttribLocation(program, 0, "in_position");
     glBindAttribLocation(program, 1, "in_normal");
     glBindAttribLocation(program, 2, "in_tangent");
     glBindAttribLocation(program, 3, "in_texCoord");
+
+    glBindFragDataLocation(program, 0, "out_frag0");
+    glBindFragDataLocation(program, 1, "out_frag1");
+    glBindFragDataLocation(program, 2, "out_frag2");
+    glBindFragDataLocation(program, 3, "out_frag3");
 
     glLinkProgram(program);
     printProgramInfoLog(program);
@@ -216,6 +220,19 @@ bool Shader::loadAndCompile()
     projMatrixLoc = glGetUniformLocation(program, "projMatrix");
     viewMatrixLoc = glGetUniformLocation(program, "viewMatrix");
     modelMatrixLoc = glGetUniformLocation(program, "modelMatrix");
+
+    glUseProgram(program);
+
+    char str[10];
+    for(int i=0; i<8; ++i)
+    {
+        sprintf(str, "texture%i",i);
+        int textureLoc = glGetUniformLocation(program, str);
+        if(textureLoc > -1)
+            glUniform1i(textureLoc, i);
+    }
+
+    glUseProgram(0);
 
     compiled = true;
  

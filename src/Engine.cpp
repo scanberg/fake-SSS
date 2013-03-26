@@ -30,7 +30,7 @@ namespace glen
 		glfwInit();
 
 		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
+		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 3);
 		glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
@@ -69,7 +69,7 @@ namespace glen
 
 		glEnable(GL_DEPTH_TEST);
     	glEnable(GL_CULL_FACE);
-    	glfwSwapInterval(1);
+    	glfwSwapInterval(0);
 
 		return true;
 	}

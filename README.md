@@ -2,15 +2,13 @@
 
 1. LIGHT DEPTH PASS, Render depth values of lights that cast shadows
 
-2. FRONT PASS, Render depth, albedo + noise, normal
+2. FRONT PASS, Render depth, albedo + noise, normal + specularity
 
-2. LIGHTS PASS, Render all lights into an accumulated buffer using blend(ONE,ONE)
+3. LIGHTS PASS, Render all lights into an accumulated buffer using blend(ONE,ONE)
 
-3. COMPOSE PASS, Render the correct image from albedo, and front/back -light
+4. HDR BLUR PASS, Blur the image to bleed very intensive pixels, using a gaussian blur
 
-5. HDR BLUR PASS, Blur the image to bleed very intensive pixels, using a gaussian blur
-
-6. TONE MAP PASS, compose the final image from final and blur, then tonemap to 8-bit values
+5. TONE MAP PASS, compose the final image from final and blur, then tonemap to 8-bit values
 
 
 Thanks to Infinite Realities (www.ir-ltd.net) for the head model,
