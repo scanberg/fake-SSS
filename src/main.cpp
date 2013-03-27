@@ -328,10 +328,14 @@ int main()
 
         fboFront.bind();
 
+        GLenum auxBuffer1[1] = {GL_COLOR_ATTACHMENT1};
+        GLenum auxBuffer2[1] = {GL_COLOR_ATTACHMENT2};
+
         for(int i=0; i<NUM_HDR_BLUR_PASSES; i++)
         {
             // use as tempbuffer
             //fboFront.bind();
+            glDrawBuffers(1, auxBuffer1);
             hBlurShader.bind();
 
             if(i == 0)
@@ -346,6 +350,7 @@ int main()
             //fboFront.unbind();
 
             //fboBlur.bind();
+            glDrawBuffers(1, auxBuffer2);
             vBlurShader.bind();
 
             glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
@@ -353,7 +358,7 @@ int main()
             // draw!
             fsquad.draw();
 
-            vBlurShader.unbind();
+            //vBlurShader.unbind();
             //fboBlur.unbind();
         }
 
