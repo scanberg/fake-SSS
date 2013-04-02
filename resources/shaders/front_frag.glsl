@@ -167,13 +167,17 @@ uniform sampler2D texture2;     // Specular map
 uniform vec3 noiseScale = vec3(20,5,20);
 uniform float specularExp = 20.0;
 
+uniform float time = 0.0;
+
 in vec3 Position;
 in vec3 Normal;
 in vec3 Tangent;
 in vec3 WorldPos;
+in vec3 WorldNormal;
 in vec2 TexCoord;
 in vec3 ViewSpaceCoord;
 in vec3 CameraInObjectSpace;
+in vec3 EyeInTangentSpace;
 
 out vec4 out_frag0;
 out vec3 out_frag1;
@@ -191,14 +195,139 @@ float sampleNoise( vec3 coord ) {
 
 }
 
+float n_snoise(vec2 coord)
+{
+  return 0.5 + 0.5*snoise(coord);
+}
+
+float n_snoise(vec3 coord)
+{
+  return 0.5 + 0.5*snoise(coord);
+}
+
+float specularBaseNoise( vec2 uv, vec3 worldNormal )
+{
+  // One cycle is 4 seconds
+  const float timeScale = 0.25;
+  float t = fract(time*timeScale);
+
+  float w1 = 2.0 * abs(0.5 - t);
+  float w2 = 1.0 - w1;
+
+  float s1 = fract(t+0.5);
+  float s2 = t;
+
+  vec2 seed1 = uv*50.0 + vec2(0,s1);
+  vec2 seed2 = uv*50.0 + vec2(289.0*0.5) + vec2(0,s2);
+
+  float n1 = n_snoise( seed1 );
+  float n2 = n_snoise( seed2 );
+
+  float n = n1 * w1 + n2 * w2;
+
+  vec2 scale = vec2(80.0,10.0);
+
+  float noise = snoise(vec3(uv * scale + vec2(0,time*1.0), time*0.2));
+
+  n = smoothstep(0.2, 1.0, noise);
+
+  //float verticalComponent = 0.3 + 0.7*(1.0 - 1.0*abs(dot(worldNormal, vec3(0,1,0))));
+
+  return n;
+}
+
+float dropNoise(vec2 uv)
+{
+  const vec2 rainDropScale = vec2(50.0,25.0);
+  const float rainDropLife = 1.2;
+
+  // const float timeScale = 0.5;
+  // const int activeCycles = 4;
+
+  // float scaledTime = time*timeScale;
+
+  // float t;
+  // float w;
+  // float s;
+  // float n = 0.0;
+
+  // uv *= rainDropScale;
+
+  // float timeOffset = 289.0 / float(activeCycles);
+  // float timeOffsetScale = 1.0 / float(activeCycles);
+
+  // for(int i=0; i<activeCycles; i++)
+  // {
+  //   t = fract(scaledTime + timeOffsetScale*i);
+  //   w = 1.0 - t;
+  //   s = floor(scaledTime + timeOffset*i + timeOffsetScale*i);
+  //   n += smoothstep(0.6, 1.0, snoise( vec3(uv, s) )) * w;
+  // }
+
+  float n = smoothstep(0.6, 1.0, snoise(vec3((uv + vec2(0,time*0.05)) * rainDropScale ,time * rainDropLife)));
+
+  return n;
+}
+
+float flowNoise(vec2 uv)
+{
+  const vec2 flowScale = vec2(120.0, 5.0);
+  const float flowSpeed = 0.8;
+  const float flowTime = 0.3;
+
+  return smoothstep(0.3, 1.0, snoise(vec3(uv * flowScale + vec2(0,time*flowSpeed), time*flowTime)));
+}
+
+float waterNoise(vec2 uv)
+{
+  return dropNoise(uv)*0.4 + flowNoise(uv)*0.3;
+}
+
 void main(void)
 {
-  vec3 colorMap = texture(texture0, TexCoord).rgb;
-  vec3 normalMap = texture(texture1, TexCoord).rgb;
-  float specularMap = texture(texture2, TexCoord).a;
+  vec2 texCoord = TexCoord;
+
+  float waterHeight = waterNoise(TexCoord);
+  vec3 waterNormal = vec3(0.0);
+
+  if(waterHeight > 0.00)
+  {
+    // Calculate waterdrop normals from height value;
+    const vec2 texelSize = vec2(1.0/1024);
+    float sample[4];
+    sample[0] = waterNoise( TexCoord + texelSize * vec2( 0,-1) );
+    sample[1] = waterNoise( TexCoord + texelSize * vec2(-1, 0) );
+    sample[2] = waterNoise( TexCoord + texelSize * vec2( 1, 0) );
+    sample[3] = waterNoise( TexCoord + texelSize * vec2( 0, 1) );
+    
+    waterNormal.x = sample[1] - sample[2];
+    waterNormal.y = sample[0] - sample[3];
+    waterNormal.z = 1.0;
+
+    waterNormal = normalize(waterNormal);
+
+    vec3 eye = normalize(-EyeInTangentSpace);
+    vec2 offsetDir = eye.xy;
+
+    // N1 = Air, N2 = Water
+    const float N1_over_N2 = 1.0 / 1.31;
+    const float waterOffsetScale = 0.01;
+
+    // new offset coordinate calculated using snell's law
+    texCoord += waterHeight * waterOffsetScale * N1_over_N2 * offsetDir;
+
+  }
+
+  vec3 colorMap = texture(texture0, texCoord).rgb;
+  vec3 normalMap = texture(texture1, texCoord).rgb;
+  float specularMap = texture(texture2, texCoord).r;
 
 	// Transform into [-1, 1]
 	vec3 textureNormal = normalMap * 2.0 - 1.0;
+
+  textureNormal += waterNormal;
+
+  textureNormal = normalize(textureNormal);
 
 	vec3 n = normalize(Normal);
 	vec3 t = normalize(Tangent);
@@ -225,8 +354,14 @@ void main(void)
 		sampleCoord += stepsize * direction;
 	}
 
+  vec3 worldNormal = normalize(WorldNormal);
+
+  float specBase = 0.2 + waterHeight;
+  float specularExp = 50.0 + waterHeight*50.0;
+
+  // Pack specular base & exp into one float
   float flooredExp = specularExp - fract(specularExp);
-  float specularity = 0.1 * 0.99 + flooredExp;
+  float specularity = clamp(specBase, 0.0, 1.0) * 0.99 + flooredExp;
 
 	out_frag0 = vec4(colorMap/2.2, noise);
 	out_frag1 = vec3(viewSpaceNormal.xy, specularity);

@@ -17,8 +17,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef Log_H
-#define Log_H
+#pragma once
 
 #include <cstdio>
 #include <cstdlib>
@@ -26,9 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 void printErrorsGL(const char *func, int line);
 
-#define logError(...) {printf("ERROR (%s:%i): ", __FUNCTION__, __LINE__);printf(__VA_ARGS__);printf("\n");}
-#define logWarning(...) {printf("WARNING (%s:%i): ", __FUNCTION__, __LINE__);printf(__VA_ARGS__);printf("\n");}
-#define logNote(...) {printf("NOTE: ");printf(__VA_ARGS__);printf("\n");}
+#define logError(...) {printf("Error (%s:%i): ", __FUNCTION__, __LINE__);printf(__VA_ARGS__);printf("\n");}
+#define logWarning(...) {printf("Warning (%s:%i): ", __FUNCTION__, __LINE__);printf(__VA_ARGS__);printf("\n");}
+#define logNote(...) {printf("Note: ");printf(__VA_ARGS__);printf("\n");}
 #define logErrorsGL() printErrorsGL(__FUNCTION__, __LINE__)
-
-#endif

@@ -56,8 +56,6 @@ void drawScene();
 void calcFPS();
 void GLFWCALL keyCallback(int key, int action);
 
-GLuint fbo;
-GLuint depthMap;
 Geometry head;
 Geometry plane;
 std::vector<Spotlight*> lights;
@@ -66,10 +64,10 @@ float g_exposure;
 float g_bloom;
 float g_density;
 
+bool g_showSpec;
+
 int main()
 {
-    fbo = 0;
-    depthMap = 0;
     glen::Engine *engine = new glen::Engine();
 
     if(!engine->init(WINDOW_WIDTH,WINDOW_HEIGHT))
@@ -83,6 +81,7 @@ int main()
     g_exposure = 2.2;
     g_bloom = 0.3;
     g_density = 1.2;
+    g_showSpec = false;
 
     int timeLoc;
     int textureMatrixLoc;
@@ -147,6 +146,7 @@ int main()
     Shader vBlurShader("resources/shaders/basic_vert.glsl", "resources/shaders/v_blur_frag.glsl");
     Shader hBlurShader("resources/shaders/basic_vert.glsl", "resources/shaders/h_blur_frag.glsl");
     Shader tonemapShader("resources/shaders/basic_vert.glsl", "resources/shaders/tonemap_frag.glsl");
+    Shader specularShader("resources/shaders/basic_vert.glsl", "resources/shaders/specular_frag.glsl");
 
     vBlurShader.bind();
 
@@ -271,6 +271,10 @@ int main()
         if(uniformLoc > -1)
             glUniform3fv(uniformLoc, 1, glm::value_ptr(cam.getPosition()));
 
+        timeLoc = frontShader.getUniformLocation("time");
+        if(timeLoc > -1)
+            glUniform1f(timeLoc, (float)glfwGetTime());
+
         drawScene();
 
         //frontShader.unbind();
@@ -283,135 +287,155 @@ int main()
         glDisable(GL_DEPTH_TEST);
         glDepthMask(0);
 
-        //Blend each lights contribution into the buffer
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-
-        // LIGHT PASS
-
-        fboFinal.bind();
-
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        lightShader.bind();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_DEPTH));
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX0));
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
-
-        textureMatrixLoc = lightShader.getUniformLocation("textureMatrix");
-
-        glUniformMatrix4fv(lightShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
-
-        uniformLoc = lightShader.getUniformLocation("invViewMatrix");
-        if(uniformLoc > -1)
-            glUniformMatrix4fv(uniformLoc, 1, false, glm::value_ptr(cam.getInverseViewMatrix()));
-
-        uniformLoc = lightShader.getUniformLocation("density");
-        if(uniformLoc > -1)
-            glUniform1f(uniformLoc, g_density);
-
-        glActiveTexture(GL_TEXTURE3);
-
-        for(size_t i=0; i<lights.size(); ++i)
+        if(g_showSpec)
         {
-            glBindTexture(GL_TEXTURE_2D, lights[i]->getShadowMap());
-            
-            if(textureMatrixLoc > -1)
-            {
-                textureMatrix = lights[i]->getTextureMatrix() * cam.getInverseViewMatrix();
-                glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(textureMatrix));
-            }
+            // DRAW TO SCREEN
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDrawBuffer(GL_BACK);
 
-            lights[i]->setPositionUniform("spotlightPos");
-            lights[i]->setDirectionUniform("spotlightDir");
-            lights[i]->setColorUniform("spotlightColor");
+            glCullFace(GL_BACK);
+            glClear(GL_COLOR_BUFFER_BIT);
 
-            fsquad.draw();
-        }
-
-        fboFinal.unbind();
-
-        glDisable(GL_BLEND);
-
-        // END LIGHT PASS
-
-        // HDR-BLUR PASS
-
-        glActiveTexture(GL_TEXTURE0);
-
-        fboFront.bind();
-
-        GLenum auxBuffer1[1] = {GL_COLOR_ATTACHMENT1};
-        GLenum auxBuffer2[1] = {GL_COLOR_ATTACHMENT2};
-
-        for(int i=0; i<NUM_HDR_BLUR_PASSES; i++)
-        {
-            // use as tempbuffer
-            //fboFront.bind();
-            glDrawBuffers(1, auxBuffer1);
-            hBlurShader.bind();
-
-            if(i == 0)
-                glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
-            else
-                glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX2));
-
-            // draw!
-            fsquad.draw();
-
-            //hBlurShader.unbind();
-            //fboFront.unbind();
-
-            //fboBlur.bind();
-            glDrawBuffers(1, auxBuffer2);
-            vBlurShader.bind();
-
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
 
-            // draw!
+            specularShader.bind();
+
+            fsquad.draw();
+        }
+        else
+        {
+
+            // LIGHT PASS
+
+            //Blend each lights contribution into the buffer
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE);
+
+            fboFinal.bind();
+
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            lightShader.bind();
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_DEPTH));
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX0));
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
+
+            textureMatrixLoc = lightShader.getUniformLocation("textureMatrix");
+
+            glUniformMatrix4fv(lightShader.getViewMatrixLocation(), 1, false, glm::value_ptr(cam.getViewMatrix()));
+
+            uniformLoc = lightShader.getUniformLocation("invViewMatrix");
+            if(uniformLoc > -1)
+                glUniformMatrix4fv(uniformLoc, 1, false, glm::value_ptr(cam.getInverseViewMatrix()));
+
+            uniformLoc = lightShader.getUniformLocation("density");
+            if(uniformLoc > -1)
+                glUniform1f(uniformLoc, g_density);
+
+            glActiveTexture(GL_TEXTURE3);
+
+            for(size_t i=0; i<lights.size(); ++i)
+            {
+                glBindTexture(GL_TEXTURE_2D, lights[i]->getShadowMap());
+                
+                if(textureMatrixLoc > -1)
+                {
+                    textureMatrix = lights[i]->getTextureMatrix() * cam.getInverseViewMatrix();
+                    glUniformMatrix4fv(textureMatrixLoc, 1, false, glm::value_ptr(textureMatrix));
+                }
+
+                lights[i]->setPositionUniform("spotlightPos");
+                lights[i]->setDirectionUniform("spotlightDir");
+                lights[i]->setColorUniform("spotlightColor");
+
+                fsquad.draw();
+            }
+
+            fboFinal.unbind();
+
+            glDisable(GL_BLEND);
+
+            // END LIGHT PASS
+
+            // HDR-BLUR PASS
+
+            glActiveTexture(GL_TEXTURE0);
+
+            fboFront.bind();
+
+            GLenum auxBuffer1[1] = {GL_COLOR_ATTACHMENT1};
+            GLenum auxBuffer2[1] = {GL_COLOR_ATTACHMENT2};
+
+            for(int i=0; i<NUM_HDR_BLUR_PASSES; i++)
+            {
+                // use as tempbuffer
+                //fboFront.bind();
+                glDrawBuffers(1, auxBuffer1);
+                hBlurShader.bind();
+
+                if(i == 0)
+                    glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
+                else
+                    glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX2));
+
+                // draw!
+                fsquad.draw();
+
+                //hBlurShader.unbind();
+                //fboFront.unbind();
+
+                //fboBlur.bind();
+                glDrawBuffers(1, auxBuffer2);
+                vBlurShader.bind();
+
+                glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX1));
+
+                // draw!
+                fsquad.draw();
+
+                //vBlurShader.unbind();
+                //fboBlur.unbind();
+            }
+
+            fboFront.unbind();
+
+            // END HDR-BLUR PASS
+
+            // DRAW TO SCREEN
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDrawBuffer(GL_BACK);
+
+            glCullFace(GL_BACK);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX2));
+            glGenerateMipmap(GL_TEXTURE_2D);
+
+            tonemapShader.bind();
+
+            uniformLoc = tonemapShader.getUniformLocation("exposure");
+            if(uniformLoc>-1)
+                glUniform1f(uniformLoc, g_exposure);
+
+            uniformLoc = tonemapShader.getUniformLocation("bloom");
+            if(uniformLoc>-1)
+                glUniform1f(uniformLoc, g_bloom);
+
             fsquad.draw();
 
-            //vBlurShader.unbind();
-            //fboBlur.unbind();
         }
-
-        fboFront.unbind();
-
-        // END HDR-BLUR PASS
-
-        // DRAW TO SCREEN
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDrawBuffer(GL_BACK);
-
-        glCullFace(GL_BACK);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fboFinal.getBufferHandle(FBO_AUX0));
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fboFront.getBufferHandle(FBO_AUX2));
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        tonemapShader.bind();
-
-        uniformLoc = tonemapShader.getUniformLocation("exposure");
-        if(uniformLoc>-1)
-            glUniform1f(uniformLoc, g_exposure);
-
-        uniformLoc = tonemapShader.getUniformLocation("bloom");
-        if(uniformLoc>-1)
-            glUniform1f(uniformLoc, g_bloom);
-
-        fsquad.draw();
-
-        //tonemapShader.unbind();
 
         engine->swapBuffers();
         if(!glfwGetWindowParam(GLFW_OPENED) || glfwGetKey(GLFW_KEY_ESC))
@@ -420,7 +444,7 @@ int main()
 
     for(size_t i=0; i<lights.size(); i++)
     {
-        delete lights[i];
+        delete lights[i];                        
     }
 
     glDeleteTextures(1, &testTexture);
@@ -526,6 +550,10 @@ void GLFWCALL keyCallback(int key, int action)
     else if(key == 'F' && action == GLFW_PRESS)
     {
         g_density = glm::clamp(g_density - DENSITY_INC, DENSITY_MIN, DENSITY_MAX);
+    }
+    else if(key == '1' && action == GLFW_PRESS)
+    {
+        g_showSpec = !g_showSpec;
     }
 }
 
