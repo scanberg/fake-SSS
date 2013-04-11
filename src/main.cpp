@@ -46,6 +46,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define DENSITY_MAX 3.0
 #define DENSITY_INC 0.1
 
+#define RAIN_MIN 0.0
+#define RAIN_MAX 1.0
+#define RAIN_INC 0.1
+
 #define ROTATION_SPEED 0.1
 
 void modifyModel(mat4 &m);
@@ -63,6 +67,7 @@ std::vector<Spotlight*> lights;
 float g_exposure;
 float g_bloom;
 float g_density;
+float g_rain;
 
 bool g_showSpec;
 
@@ -81,6 +86,7 @@ int main()
     g_exposure = 2.2;
     g_bloom = 0.3;
     g_density = 1.2;
+    g_rain = 0.5;
     g_showSpec = false;
 
     int timeLoc;
@@ -270,6 +276,10 @@ int main()
         uniformLoc = frontShader.getUniformLocation("camPos");
         if(uniformLoc > -1)
             glUniform3fv(uniformLoc, 1, glm::value_ptr(cam.getPosition()));
+
+        uniformLoc = frontShader.getUniformLocation("rainAmount");
+        if(uniformLoc > -1)
+            glUniform1f(uniformLoc, g_rain);
 
         timeLoc = frontShader.getUniformLocation("time");
         if(timeLoc > -1)
@@ -551,6 +561,14 @@ void GLFWCALL keyCallback(int key, int action)
     {
         g_density = glm::clamp(g_density - DENSITY_INC, DENSITY_MIN, DENSITY_MAX);
     }
+    else if (key == 'T' && action == GLFW_PRESS)
+    {
+        g_rain = glm::clamp(g_rain + RAIN_INC, RAIN_MIN, RAIN_MAX);
+    }
+    else if(key == 'G' && action == GLFW_PRESS)
+    {
+        g_rain = glm::clamp(g_rain - RAIN_INC, RAIN_MIN, RAIN_MAX);
+    }
     else if(key == '1' && action == GLFW_PRESS)
     {
         g_showSpec = !g_showSpec;
@@ -571,7 +589,7 @@ void calcFPS()
         frameCount = 0;
         t0 = t;
 
-        sprintf(title, "Fake-SSS FPS: %3.1f, Exposure(W/S): %2.1f, Bloom(E/D) %1.1f, Density(R/F) %1.2f", fps, g_exposure, g_bloom, g_density);
+        sprintf(title, "Fake-SSS FPS: %3.1f, Exposure(W/S): %2.1f, Bloom(E/D) %1.1f, Density(R/F) %1.2f, Rain(T/G) %1.1f", fps, g_exposure, g_bloom, g_density, g_rain);
         glfwSetWindowTitle(title);
     }
     frameCount++;

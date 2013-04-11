@@ -169,7 +169,7 @@ uniform float specularExp = 20.0;
 
 uniform float time = 0.0;
 
-uniform float rainAmount = 0.8;
+uniform float rainAmount = 0.2;
 
 in vec3 Position;
 in vec3 Normal;
@@ -240,39 +240,11 @@ float specularBaseNoise( vec2 uv, vec3 worldNormal )
 
 float dropNoise(vec2 uv)
 {
-  vec2 rainDropScale = vec2(50.0,25.0);
-  float rainDropLife = 1.2;
-
-  // const float timeScale = 0.5;
-  // const int activeCycles = 4;
-
-  // float scaledTime = time*timeScale;
-
-  // float t;
-  // float w;
-  // float s;
-  // float n = 0.0;
-
-  // uv *= rainDropScale;
-
-  // float timeOffset = 289.0 / float(activeCycles);
-  // float timeOffsetScale = 1.0 / float(activeCycles);
-
-  // for(int i=0; i<activeCycles; i++)
-  // {
-  //   t = fract(scaledTime + timeOffsetScale*i);
-  //   w = 1.0 - t;
-  //   s = floor(scaledTime + timeOffset*i + timeOffsetScale*i);
-  //   n += smoothstep(0.6, 1.0, snoise( vec3(uv, s) )) * w;
-  // }
-
-  rainDropScale *= 0.5 + rainAmount;
-
+  vec2 rainDropScale = vec2(50.0,25.0) * (0.5 + rainAmount);
+  float rainDropLife = 1.5*rainAmount;
   float minLimit = 0.8 - rainAmount * 0.25;
 
-  rainDropLife = 1.5*rainAmount;
-
-  float n = smoothstep(minLimit, 1.0, snoise(vec3((uv + vec2(0,time*0.05)) * rainDropScale ,time * rainDropLife)));
+  float n = smoothstep(minLimit, 1.0, snoise(vec3((uv + vec2(0,time*0.03)) * rainDropScale ,time * rainDropLife)));
 
   return n;
 }
@@ -283,12 +255,19 @@ float flowNoise(vec2 uv)
   const float flowSpeed = 0.8;
   const float flowTime = 0.3;
 
-  return smoothstep(0.3, 1.0, snoise(vec3(uv * flowScale + vec2(0,time*flowSpeed), time*flowTime)));
+  float n = smoothstep(0.3, 1.0, snoise(vec3(uv * flowScale + vec2(0,time*flowSpeed), time*flowTime)));
+
+  return n;
 }
 
 float waterNoise(vec2 uv)
 {
-  return clamp(0.0, 1.0, dropNoise(uv)*0.6 + flowNoise(uv)*0.2);
+  if(rainAmount == 0.0)
+    return 0.0;
+    
+  float dropScale = 0.5 + rainAmount*0.5;
+  float flowScale = rainAmount * 0.5;
+  return clamp(0.0, 1.0, dropNoise(uv) * dropScale + flowNoise(uv) * flowScale);
 }
 
 void main(void)
