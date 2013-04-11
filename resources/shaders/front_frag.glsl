@@ -169,6 +169,8 @@ uniform float specularExp = 20.0;
 
 uniform float time = 0.0;
 
+uniform float rainAmount = 0.8;
+
 in vec3 Position;
 in vec3 Normal;
 in vec3 Tangent;
@@ -238,8 +240,8 @@ float specularBaseNoise( vec2 uv, vec3 worldNormal )
 
 float dropNoise(vec2 uv)
 {
-  const vec2 rainDropScale = vec2(50.0,25.0);
-  const float rainDropLife = 1.2;
+  vec2 rainDropScale = vec2(50.0,25.0);
+  float rainDropLife = 1.2;
 
   // const float timeScale = 0.5;
   // const int activeCycles = 4;
@@ -264,7 +266,13 @@ float dropNoise(vec2 uv)
   //   n += smoothstep(0.6, 1.0, snoise( vec3(uv, s) )) * w;
   // }
 
-  float n = smoothstep(0.6, 1.0, snoise(vec3((uv + vec2(0,time*0.05)) * rainDropScale ,time * rainDropLife)));
+  rainDropScale *= 0.5 + rainAmount;
+
+  float minLimit = 0.8 - rainAmount * 0.25;
+
+  rainDropLife = 1.5*rainAmount;
+
+  float n = smoothstep(minLimit, 1.0, snoise(vec3((uv + vec2(0,time*0.05)) * rainDropScale ,time * rainDropLife)));
 
   return n;
 }
@@ -280,42 +288,43 @@ float flowNoise(vec2 uv)
 
 float waterNoise(vec2 uv)
 {
-  return dropNoise(uv)*0.4 + flowNoise(uv)*0.3;
+  return clamp(0.0, 1.0, dropNoise(uv)*0.6 + flowNoise(uv)*0.2);
 }
 
 void main(void)
 {
   vec2 texCoord = TexCoord;
-
-  float waterHeight = waterNoise(TexCoord);
+  float waterHeight = 0.0;
   vec3 waterNormal = vec3(0.0);
 
-  if(waterHeight > 0.00)
+  if(rainAmount > 0.0)
   {
-    // Calculate waterdrop normals from height value;
-    const vec2 texelSize = vec2(1.0/1024);
-    float sample[4];
-    sample[0] = waterNoise( TexCoord + texelSize * vec2( 0,-1) );
-    sample[1] = waterNoise( TexCoord + texelSize * vec2(-1, 0) );
-    sample[2] = waterNoise( TexCoord + texelSize * vec2( 1, 0) );
-    sample[3] = waterNoise( TexCoord + texelSize * vec2( 0, 1) );
-    
-    waterNormal.x = sample[1] - sample[2];
-    waterNormal.y = sample[0] - sample[3];
-    waterNormal.z = 1.0;
+  waterHeight = waterNoise(texCoord);
 
-    waterNormal = normalize(waterNormal);
+    if(waterHeight > 0.00)
+    {
+      // Calculate waterdrop normals from height value;
+      const vec2 texelSize = vec2(1.0/1024.0);
+      float sample[2];
+      sample[0] = waterNoise( texCoord + texelSize * vec2(0,1) );
+      sample[1] = waterNoise( texCoord + texelSize * vec2(1,0) );
+      
+      waterNormal.x = waterHeight - sample[1];
+      waterNormal.y = waterHeight - sample[0];
 
-    vec3 eye = normalize(-EyeInTangentSpace);
-    vec2 offsetDir = eye.xy;
+      waterNormal.z = 1.0 - sqrt(dot(waterNormal.xy, waterNormal.xy));
 
-    // N1 = Air, N2 = Water
-    const float N1_over_N2 = 1.0 / 1.31;
-    const float waterOffsetScale = 0.01;
+      vec3 eye = normalize(-EyeInTangentSpace);
+      vec2 offsetDir = eye.xy;
 
-    // new offset coordinate calculated using snell's law
-    texCoord += waterHeight * waterOffsetScale * N1_over_N2 * offsetDir;
+      // N1 = Air, N2 = Water
+      const float N1_over_N2 = 1.0 / 1.31;
+      const float waterOffsetScale = 0.015;
 
+      // new offset coordinate calculated using snell's law
+      texCoord += waterHeight * waterOffsetScale * N1_over_N2 * offsetDir;
+
+    }
   }
 
   vec3 colorMap = texture(texture0, texCoord).rgb;
@@ -335,7 +344,7 @@ void main(void)
 
 	vec3 viewSpaceNormal = normalize(textureNormal.x * t + textureNormal.y * b + textureNormal.z * n);
 
-	const int SAMPLES = 5;
+	const int SAMPLES = 3;
 	const float WEIGHT_SCALE = 0.5;
 	const float stepsize = 0.01;
 
@@ -347,7 +356,7 @@ void main(void)
 	// Start one step into the material
 	vec3 sampleCoord = Position + stepsize * direction;
 
-	for(int i=0; i<SAMPLES ; ++i)
+	for(int i=0; i<SAMPLES; ++i)
 	{
 		noise += weight * sampleNoise( sampleCoord );
 		weight *= WEIGHT_SCALE;
@@ -356,7 +365,7 @@ void main(void)
 
   vec3 worldNormal = normalize(WorldNormal);
 
-  float specBase = 0.2 + waterHeight;
+  float specBase = 0.2 + waterHeight * 0.8;
   float specularExp = 50.0 + waterHeight*50.0;
 
   // Pack specular base & exp into one float
