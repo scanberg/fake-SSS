@@ -60,13 +60,13 @@ public:
 
 	void resizeBuffers(unsigned char bufferBit, int width, int height);
 
-	inline int getWidth() { return width; }
-	inline int getHeight() { return height; }
+	int getWidth() { return width; }
+	int getHeight() { return height; }
 
 	void bind();
 	void unbind();
 
-	inline unsigned int getBufferHandle(unsigned char buffer) { return *getTextureHandle(buffer); }
+	unsigned int getBufferHandle(unsigned char buffer) { return *getTextureHandle(buffer); }
 
 private:
 	bool bufferIsAux(unsigned char buffer);
