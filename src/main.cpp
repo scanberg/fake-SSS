@@ -178,7 +178,7 @@ int main()
 
     hBlurShader.unbind();
 
-    loadObj(head,"resources/meshes/head.obj", 2.0f);
+    loadObj(head,"resources/meshes/head1.obj", 2.0f);
     head.translate(vec3(0,0.3,0));
     head.createStaticBuffers();
 
