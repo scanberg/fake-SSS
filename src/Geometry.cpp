@@ -152,6 +152,15 @@ vec3 generateTangent(vec3 v1, vec3 v2, vec2 st1, vec2 st2)
     return tangent;
 }
 
+vec3 safeNormalize(vec3 v)
+{
+    float len = glm::length(v);
+    if(len > 0.0f)
+        return v / len;
+    else
+        return vec3(0.0f);
+}
+
 void Geometry::process()
 {
     glm::vec3 a,b,n,t;
@@ -192,7 +201,7 @@ void Geometry::process()
         a = vertices[triangles[i][1]].position - vertices[triangles[i][0]].position;
         b = vertices[triangles[i][2]].position - vertices[triangles[i][0]].position;
 
-        n = glm::normalize(glm::cross(a,b));
+        n = safeNormalize(glm::cross(a,b));
 
         sta = vertices[triangles[i][1]].texCoord - vertices[triangles[i][0]].texCoord;
         stb = vertices[triangles[i][2]].texCoord - vertices[triangles[i][0]].texCoord;
@@ -212,10 +221,10 @@ void Geometry::process()
         if(sharedFaces[i]>0)
         {
             tempNormal[i] /= (f32)sharedFaces[i];
-            tempNormal[i] = glm::normalize(tempNormal[i]);
+            tempNormal[i] = safeNormalize(tempNormal[i]);
 
             tempTangent[i] /= (f32)sharedFaces[i];
-            tempTangent[i] = glm::normalize(tempTangent[i]);
+            tempTangent[i] = safeNormalize(tempTangent[i]);
         }
         if(glm::dot(vertices[i].normal, vertices[i].normal) == 0.0f)
         {
@@ -226,7 +235,7 @@ void Geometry::process()
         const vec3 & n = tempNormal[i];
 
         // Gram-Schmidt orthogonalize
-        vertices[i].tangent = glm::normalize(t - n * glm::dot(n, t));
+        vertices[i].tangent = safeNormalize(t - n * glm::dot(n, t));
     }
     printf("Done processing \n");
 }
