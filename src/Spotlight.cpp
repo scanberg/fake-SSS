@@ -33,11 +33,11 @@ static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
 Spotlight::Spotlight()
 {
 	width = height = DEPTHMAP_RESOLUTION;
-	near = 0.1;
-	far = 5.0;
-	position = 	vec4(0,0,0,45.0);
-	direction = vec4(0,0,-1,40.0);
-	color = 	vec4(1,1,1,100.0);
+	near = 0.1f;
+	far = 5.0f;
+	position = 	vec4(0,0,0,45);
+	direction = vec4(0,0,-1,40);
+	color = 	vec4(1,1,1,100);
 
 	depthFbo = NULL;
 	depthFbo = new Framebuffer2D(width, height);

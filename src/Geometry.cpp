@@ -33,8 +33,8 @@ Geometry::~Geometry()
     destroyBuffers();
 }
 
-u32 Geometry::getVertexSize() { return vertices.size(); }
-u32 Geometry::getTriangleSize() { return triangles.size(); }
+size_t Geometry::getVertexSize() { return vertices.size(); }
+size_t Geometry::getTriangleSize() { return triangles.size(); }
 
 const vec3 &Geometry::getVertexPosition(const u32 &vertexIndex) const
 {

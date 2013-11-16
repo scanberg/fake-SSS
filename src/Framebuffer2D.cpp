@@ -66,8 +66,8 @@ bool Framebuffer2D::attachBuffer(   unsigned char buffer,
 
         glBindTexture(GL_TEXTURE_2D, *textureHandle);
 
-        glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureMinFilter );
-        glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureMagFilter );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureMinFilter );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureMagFilter );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, textureWrapS );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, textureWrapT );
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, NULL);

@@ -41,8 +41,8 @@ public:
     ~Geometry();
 
     /** GET functions **/
-    u32 getVertexSize();
-    u32 getTriangleSize();
+    size_t getVertexSize();
+    size_t getTriangleSize();
 
     const vec3 &getVertexPosition(const u32 &vertexIndex) const;
     const vec3 &getVertexNormal(const u32 &vertexIndex) const;
@@ -65,7 +65,7 @@ public:
 
     bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint tangLoc=2, GLint texLoc=3);
     bool createDynamicBuffers();
-    inline bool existOnGpu() { return glIsVertexArray(vao); }
+    inline bool existOnGpu() { return (bool)glIsVertexArray(vao); }
     bool updateBuffers();
 
     void destroyBuffers();

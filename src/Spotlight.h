@@ -35,7 +35,7 @@ public:
 
 	void setup();
 
-	void setOuterAngle(float angle) { position.w = angle; setInnerAngle(angle - 5.0); }
+	void setOuterAngle(float angle) { position.w = angle; setInnerAngle(angle - 5.0f); }
 	void setInnerAngle(float angle) { direction.w = glm::clamp(angle, 0.0f, position.w); }
 
 	void setPosition(vec3 pos) { position.x = pos.x; position.y = pos.y; position.z = pos.z; }

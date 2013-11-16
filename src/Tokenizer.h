@@ -63,7 +63,7 @@ public:
 
     void reset() { counter=0; }
     bool end() { return counter==tokens.size(); }
-    unsigned int size() { return tokens.size(); }
+    size_t size() { return tokens.size(); }
 };
 
 #endif
