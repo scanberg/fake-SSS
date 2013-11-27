@@ -21,6 +21,6 @@ Scattering approximation
 http://http.developer.nvidia.com/GPUGems/gpugems_ch16.html
 
 EXTERNAL DEPENDENCIES:
-glfw: http://www.glfw.org/
+glfw2: http://www.glfw.org/
 glew: http://glew.sourceforge.net/
 glm:  http://glm.g-truc.net/
