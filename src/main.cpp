@@ -50,7 +50,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define RAIN_MAX 1.0
 #define RAIN_INC 0.1
 
-#define ROTATION_SPEED 0.1
+#define ROTATION_SPEED 0.0
 
 void modifyModel(mat4 &m);
 void modifyCamera(Camera *cam);
@@ -120,7 +120,7 @@ int main()
     lights[0]->setPosition(vec3(0.1,0.4,-1.5));
     lights[0]->setLookAt(vec3(0,0.3,0));
     lights[0]->setColor(vec3(1.0,1.0,1.0));
-    lights[0]->setLumen(5);
+    lights[0]->setLumen(2);
     lights[0]->setOuterAngle(35.0);
 
     // lights.push_back(new Spotlight());
@@ -134,7 +134,7 @@ int main()
     lights[1]->setPosition(vec3(0.0,0.4,1.5));
     lights[1]->setLookAt(vec3(0,0.3,0));
     lights[1]->setColor(vec3(1.0,1.0,1.0));
-    lights[1]->setLumen(6);
+    lights[1]->setLumen(3);
     lights[1]->setOuterAngle(35.0);
 
     Camera cam;
@@ -209,6 +209,7 @@ int main()
     {
         calcFPS();
         modifyModel(modelMatrix);
+		modelMatrix = glm::rotate(mat4(), 30.0f, vec3(0.0, 1.0, 0.0));
         modifyCamera(&cam);
 
         cam.setup();

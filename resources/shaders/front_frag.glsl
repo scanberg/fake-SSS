@@ -342,15 +342,17 @@ void main(void)
 		sampleCoord += stepsize * direction;
 	}
 
-  vec3 worldNormal = normalize(WorldNormal);
+  //vec3 worldNormal = normalize(WorldNormal);
 
   float specBase = 0.2 + waterHeight * 0.8;
   float specularExp = 50.0 + waterHeight*50.0;
+
+  //colorMap *= 1.0 - 0.2 * smoothstep(0.1, 0.3, waterHeight);
 
   // Pack specular base & exp into one float
   float flooredExp = specularExp - fract(specularExp);
   float specularity = clamp(specBase, 0.0, 1.0) * 0.99 + flooredExp;
 
-	out_frag0 = vec4(colorMap/2.2, noise);
+	out_frag0 = vec4(colorMap, noise);
 	out_frag1 = vec3(viewSpaceNormal.xy, specularity);
 }

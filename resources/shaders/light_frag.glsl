@@ -107,15 +107,15 @@ void main(void)
 
 	// Calculate the distance through the material at the fragments location towards the spotlight
 	float lightDepth = textureDepth;
-	//float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
+	//float lightDepth = linearizeDepth(textureDepth, camRange);
 	float fragDepthFromLight = coord.z;
-	//float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
+	//float fragDepthFromLight = linearizeDepth(coord.z, camRange);
 
 	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
 
 	// Map density to a sigma term
 	float sigma = pow(density*10.0,3.0);
-	float scatterTerm = exp(-(deltaDepth) * sigma);
+	float scatterTerm = deltaDepth * 1500 * exp((-deltaDepth) * sigma);
 
 	// Should be a uniform based on material type
 	vec3 insideColor = vec3(1.0,0.0,0.0);
@@ -129,6 +129,7 @@ void main(void)
 
 	if(textureDepth > (shadowCoord.z - ShadowDepthOffset)/shadowCoord.w)
 	{
+		// Modify costerm to falloff faster, to avoid flickering due to glancing angles
 		surfaceContrib = max(0.0, cosTerm * 1.2 - 0.2 ) * spotLightContrib;
 
 		// Unpack specular base and exponent

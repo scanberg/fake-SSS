@@ -8,7 +8,7 @@ uniform float bloom = 0.5;
 
 in vec2 TexCoord;
 
-out vec3 out_Tonemapped;
+out vec3 out_frag0;
 
 const float W = 11.2;
  
@@ -41,6 +41,6 @@ void main(void)
 	vec3 curr = Uncharted2Tonemap(exposure*final);
 	vec3 color = curr*whiteScale;
 
-	out_Tonemapped = color;
-
+	//out_frag0 = pow(color, vec3(1.0/2.2));
+	out_frag0 = color;
 }
