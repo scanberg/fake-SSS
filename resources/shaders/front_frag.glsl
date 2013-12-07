@@ -267,7 +267,7 @@ float waterNoise(vec2 uv)
     
   float dropScale = 0.5 + rainAmount*0.5;
   float flowScale = rainAmount * 0.5;
-  return clamp(0.0, 1.0, dropNoise(uv) * dropScale + flowNoise(uv) * flowScale);
+  return clamp(dropNoise(uv) * dropScale + flowNoise(uv) * flowScale, 0.0, 1.0);
 }
 
 void main(void)
