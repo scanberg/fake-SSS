@@ -55,7 +55,16 @@ vec3 calcViewSpaceCoords(float d)
 
 void main(void)
 {
+	// set output data to zero
+	out_frag0 = vec3(0);
+
+	// get view space coordinates
 	vec3 viewCoord = calcViewSpaceCoords(texture(texture0,TexCoord).r);
+
+	// Safe check to check if the fragment really is a part of the scene
+	if (viewCoord.z <= -100)
+		return;
+
 	vec3 worldCoord = vec3(invViewMatrix * vec4(viewCoord,1.0));
 
 	vec4 albedoAndNoise = texture(texture1, TexCoord);
@@ -68,8 +77,6 @@ void main(void)
 	vec3 lightDirViewSpace = LightDirViewSpace;
 
 	//vec4 shadowCoord = textureMatrix * vec4(worldCoord, 1.0);
-	vec4 shadowCoord = textureMatrix * vec4(viewCoord, 1.0);
-	vec3 coord = shadowCoord.xyz/shadowCoord.w;
 
 	vec3 lightToFrag = (worldCoord - spotlightPos.xyz);
 
@@ -102,14 +109,15 @@ void main(void)
 	// Total spotlight contribution
 	vec3 spotLightContrib = spot * att * spotlightColor.rgb;
 
+	vec4 shadowCoord = textureMatrix * vec4(viewCoord, 1.0);
+	vec3 coord = shadowCoord.xyz/shadowCoord.w;
+
 	// World depth values
 	float textureDepth = texture(texture3, coord.xy).r;
 
 	// Calculate the distance through the material at the fragments location towards the spotlight
 	float lightDepth = textureDepth;
-	//float lightDepth = linearizeDepth(textureDepth, camRange);
 	float fragDepthFromLight = coord.z;
-	//float fragDepthFromLight = linearizeDepth(coord.z, camRange);
 
 	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
 
@@ -143,8 +151,6 @@ void main(void)
 
 	const float backLightNoiseWeight = 0.90;
 	const float frontLightNoiseWeight = 0.27;
-
-	out_frag0 = vec3(0.0);
 
 	out_frag0 += (backLightNoiseWeight * albedoAndNoise.a + ( 1.0 - backLightNoiseWeight ) ) * subSurfaceContrib;
 	out_frag0 += (frontLightNoiseWeight * albedoAndNoise.a +  ( 1.0 - frontLightNoiseWeight ) ) * surfaceContrib;

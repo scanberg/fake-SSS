@@ -4,7 +4,7 @@ uniform sampler2D texture0;
 uniform sampler2D texture1;
 
 uniform float exposure = 2.2;
-uniform float bloom = 0.5;
+uniform float bloom = 0.3;
 
 in vec2 TexCoord;
 

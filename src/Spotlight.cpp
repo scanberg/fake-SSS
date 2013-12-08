@@ -39,17 +39,16 @@ Spotlight::Spotlight()
 	direction = vec4(0,0,-1,40);
 	color = 	vec4(1,1,1,100);
 
-	depthFbo = NULL;
 	depthFbo = new Framebuffer2D(width, height);
 
 	depthFbo->attachBuffer(	FBO_DEPTH,
 							GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT,
 							GL_LINEAR, GL_LINEAR);
 
-	glBindTexture(GL_TEXTURE_2D, getShadowMap());
+	glBindTexture(GL_TEXTURE_2D, getDepthMap());
 
 	// If textureProj is used in shader to produce a compared result directly
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -110,7 +109,14 @@ void Spotlight::setColorUniform(const char *str)
         glUniform4fv(lightColorLoc, 1, glm::value_ptr(color));
 }
 
-unsigned int Spotlight::getShadowMap()
+void Spotlight::setNearFarUniform(const char *str)
+{
+    int lightNearFarLoc = Shader::getBoundShader()->getUniformLocation(str);
+    if(lightNearFarLoc > -1)
+        glUniform2f(lightNearFarLoc, near, far);
+}
+
+unsigned int Spotlight::getDepthMap()
 {
 	if(depthFbo)
 		return depthFbo->getBufferHandle(FBO_DEPTH);

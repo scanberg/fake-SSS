@@ -50,6 +50,7 @@ public:
 	void setPositionUniform(const char *str);
 	void setDirectionUniform(const char *str);
 	void setColorUniform(const char *str);
+	void setNearFarUniform(const char *str);
 
 	float getOuterAngle() { return position.w; }
 	float getInnerAngle() { return direction.w; }
@@ -66,7 +67,7 @@ public:
 	float getNear() { return near; }
 	float getFar() { return far; }
 
-	unsigned int getShadowMap();
+	unsigned int getDepthMap();
 
 	const mat4 &getViewMatrix() { return viewMatrix; }
 	const mat4 &getProjMatrix() { return projMatrix; }
