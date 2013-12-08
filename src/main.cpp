@@ -145,8 +145,6 @@ int main()
     Shader vBlurShader("resources/shaders/basic_vert.glsl", "resources/shaders/v_blur_frag.glsl");
     Shader hBlurShader("resources/shaders/basic_vert.glsl", "resources/shaders/h_blur_frag.glsl");
     Shader tonemapShader("resources/shaders/basic_vert.glsl", "resources/shaders/tonemap_frag.glsl");
-    Shader specularShader("resources/shaders/basic_vert.glsl", "resources/shaders/specular_frag.glsl");
-    Shader debugShader("resources/shaders/basic_vert.glsl", "resources/shaders/debug_frag.glsl");
 
     vBlurShader.bind();
 

@@ -35,11 +35,12 @@ Shader *Shader::boundShader = NULL;
  */
 
 char* readTextFile(const char *filename) {
-    FILE *file = fopen(filename, "r");
+	FILE *file = fopen(filename, "r");
+
     if(file == NULL)
     {
       logError("Cannot open file %s", filename);
-      return 0;
+      return NULL;
     }
 
     fseek(file, 0, SEEK_END);
@@ -51,7 +52,7 @@ char* readTextFile(const char *filename) {
     if(bytesinfile > 0)
     {
         buffer = (char*)malloc(bytesinfile+1);
-        int bytesread = fread( buffer, 1, bytesinfile, file);
+        size_t bytesread = fread( buffer, 1, bytesinfile, file);
         buffer[bytesread] = '\0'; // Terminate the string with a null character
     }
 
@@ -130,7 +131,9 @@ void Shader::setVertexFile(const char *vertFile)
     int len = (int)strlen(vertFile);
 
     vertexFile = new char[len+1];
-    strcpy(vertexFile, vertFile);
+
+	strncpy(vertexFile, vertFile, len);
+
     vertexFile[len] = '\0';
 }
 
@@ -148,7 +151,9 @@ void Shader::setFragmentFile(const char *fragFile)
     int len = (int)strlen(fragFile);
 
     fragmentFile = new char[len+1];
-    strcpy(fragmentFile, fragFile);
+
+    strncpy(fragmentFile, fragFile, len);
+
     fragmentFile[len] = '\0';
 }
 
@@ -196,6 +201,12 @@ bool Shader::loadAndCompile()
  
     char *vs = readTextFile(vertexFile);
     char *fs = readTextFile(fragmentFile);
+
+	if(vs == NULL || fs == NULL)
+	{
+		logError("could not read vertex or fragment file");
+		return false;
+	}
  
     const char * vv = vs;
     const char * ff = fs;
@@ -245,7 +256,11 @@ bool Shader::loadAndCompile()
     char str[10];
     for(int i=0; i<8; ++i)
     {
+#ifdef _WIN32
+		sprintf_s(str, "texture%i",i);
+#else
         sprintf(str, "texture%i",i);
+#endif
         int textureLoc = glGetUniformLocation(program, str);
         if(textureLoc > -1)
             glUniform1i(textureLoc, i);
@@ -260,13 +275,19 @@ bool Shader::loadAndCompile()
 
 GLint Shader::getAttributeLocation(const char *att)
 {
-    return glGetAttribLocation(program, att);
+	if(program > 0)
+		return glGetAttribLocation(program, att);
+	else
+		return -1;
 }
 
 
 GLint Shader::getUniformLocation(const char *uni)
 {
-    return glGetUniformLocation(program, uni);
+	if(program > 0)
+		return glGetUniformLocation(program, uni);
+	else
+		return -1;
 }
 
 void Shader::bind()
