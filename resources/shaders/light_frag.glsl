@@ -116,10 +116,10 @@ void main(void)
 	float textureDepth = texture(texture3, coord.xy).r;
 
 	// Calculate the distance through the material at the fragments location towards the spotlight
-	float lightDepth = textureDepth;
-	float fragDepthFromLight = coord.z;
+	float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
+	float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
 
-	float deltaDepth = max(0.0, fragDepthFromLight - lightDepth);
+	float deltaDepth = max(0.001, fragDepthFromLight - lightDepth);
 
 	// Map density to a sigma term
 	float sigma = pow(density*10.0,3.0);

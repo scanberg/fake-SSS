@@ -1,0 +1,10 @@
+TODO
+
+Convert to GLFW3
+
+Fix light depth comparison in world space or view space
+
+Implement proper extinction
+
+Implement screen space sub surface scattering! Yah right!
+Perhaps Texture space?
