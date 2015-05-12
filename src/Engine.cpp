@@ -32,11 +32,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 namespace glen
 {
 
-	Engine *glen::Engine::instance = NULL;
+	Engine *glen::Engine::inst = NULL;
 
 	Engine::Engine()
 	{
-		instance = this;
+		inst = this;
 		currentShader = NULL;
 	}
 
@@ -48,24 +48,37 @@ namespace glen
 	{
 		glfwInit();
 
-		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-		glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-		glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-		glfwOpenWindowHint( GLFW_WINDOW_NO_RESIZE, GL_TRUE );
+		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-		int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
+		//int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
 
+		window = glfwCreateWindow(width, height, "Facial", NULL, NULL);
+		windowSize = ivec2(width, height);
+
+/*
 		if(!glfwOpenWindow(	width,
 							height,
 							R_BPP, G_BPP, B_BPP, A_BPP,
 							DEPTH_BPP, STENCIL_BPP,
 							fs))
+							*/
+		if(!window)
 		{
 			logError("could not create GLFW-window");
 			return false;
 		}
+
+		/* Make the window's context current */
+		glfwMakeContextCurrent(window);
+		glfwSetKeyCallback(window, Engine::keyCallback);
+		glfwSetMouseButtonCallback(window, Engine::mouseButtonCallback);
+		glfwSetCursorPosCallback(window, Engine::cursorPosCallback);
+		glfwSetScrollCallback(window, scrollCallback);
 
 		logErrorsGL();
 
@@ -81,8 +94,8 @@ namespace glen
 		logErrorsGL();
 
 		logNote("Successfully created OpenGL-window, version %i.%i",
-	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR),
-	         glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR));
+	         glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR),
+	         glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR));
 
 		logNote("GLSL-version: %s",glGetString(GL_SHADING_LANGUAGE_VERSION));
 
@@ -93,9 +106,20 @@ namespace glen
 		return true;
 	}
 
+	void Engine::setWindowTitle(const char* title)
+	{
+		glfwSetWindowTitle(window, title);
+	}
+
 	void Engine::update()
 	{
+        // Reset input data
+        mouseScrollVel = vec2(0);
+        for(int i=0; i<GLFW_KEY_LAST+1; ++i)
+        	keyHitState[i] = false;
 
+        // Read input and handle events
+        glfwPollEvents();
 	}
 
 	void Engine::render()
@@ -110,6 +134,34 @@ namespace glen
 
 	void Engine::swapBuffers()
 	{
-	    glfwSwapBuffers();
+	    glfwSwapBuffers(window);
+	}
+
+	void Engine::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{
+		Engine* e = Engine::instance();
+		e->keyDownState[key] = (action == GLFW_PRESS);
+		e->keyHitState[key] = (action == GLFW_PRESS);
+	}
+
+	void Engine::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+	{
+		Engine* e = Engine::instance();
+		e->mouseButtonDown[button] = (action == GLFW_PRESS);
+	}
+
+	void Engine::cursorPosCallback(GLFWwindow* window, double x, double y)
+	{
+		Engine* e = Engine::instance();
+		static double old_x = x, old_y = y;
+		e->mouseCursorVel = vec2(x-old_x, y-old_y);
+		old_x = x;
+		old_y = y;
+	}
+
+	void Engine::scrollCallback(GLFWwindow* window, double x, double y)
+	{
+		Engine* e = Engine::instance();
+		e->mouseScrollVel = vec2(x, y);
 	}
 }

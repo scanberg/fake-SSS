@@ -47,18 +47,39 @@ namespace glen
 
         // Set functions
         void setWindowSize(ivec2 size);
+        void setWindowTitle(const char* title);
 
         // Get functions
         Shader *getCurrentShader() { return currentShader; }
         ivec2 getWindowSize() { return windowSize; }
 
+        bool windowClosed() const { return glfwWindowShouldClose(window); }
+
+        bool keyDown(int key) const { return keyDownState[key]; }
+        bool keyHit(int key) const { return keyHitState[key]; }
+        bool mouseDown(int btn) const { return mouseButtonDown[btn]; }
+        vec2 mouseVel() const { return mouseCursorVel; }
+        vec2 mouseScroll() const { return mouseScrollVel; }
+
         // Static functions
-        static Engine *getInstance() { return instance; }
+        static Engine *instance() { return inst; }
     private:
+        static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+        static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+        static void cursorPosCallback(GLFWwindow* window, double x, double y);
+        static void scrollCallback(GLFWwindow* window, double x, double y);
+
         void setCurrentShader( Shader* shad ) { currentShader = shad; }
-        static Engine* instance;
+        static Engine* inst;
         ivec2 windowSize;
         Shader *currentShader;
+        GLFWwindow* window;
+
+        bool keyDownState[GLFW_KEY_LAST+1];
+        bool keyHitState[GLFW_KEY_LAST+1];
+        bool mouseButtonDown[8];
+        vec2 mouseCursorVel;
+        vec2 mouseScrollVel;
 
         u32 fbo;
         u32 colorMap, normalMap, depthMap;

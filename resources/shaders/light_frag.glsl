@@ -63,7 +63,7 @@ void main(void)
 
 	// Safe check to check if the fragment really is a part of the scene
 	if (viewCoord.z <= -100)
-		return;
+		discard;
 
 	vec3 worldCoord = vec3(invViewMatrix * vec4(viewCoord,1.0));
 
@@ -91,8 +91,8 @@ void main(void)
 
 	float cur_angle = dot(L,D);
 	//cur_angle = dot(normalize(shadowCoord.xyz),vec3(0,0,-1));
-	float inner_angle = cos(lightInnerAngle * 0.5 * RAD);
-	float outer_angle = cos(lightOuterAngle * 0.5 * RAD);
+	float inner_angle = cos(lightInnerAngle);
+	float outer_angle = cos(lightOuterAngle);
 	float diff_angle = inner_angle - outer_angle;
 
 	// Soft edge on spotlight

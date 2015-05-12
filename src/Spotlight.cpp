@@ -35,8 +35,8 @@ Spotlight::Spotlight()
 	width = height = DEPTHMAP_RESOLUTION;
 	near = 0.1f;
 	far = 5.0f;
-	position = 	vec4(0,0,0,45);
-	direction = vec4(0,0,-1,40);
+	position = 	vec4(0,0,0,glm::radians(45));
+	direction = vec4(0,0,-1,glm::radians(40));
 	color = 	vec4(1,1,1,100);
 
 	depthFbo = new Framebuffer2D(width, height);

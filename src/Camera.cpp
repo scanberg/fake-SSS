@@ -39,7 +39,7 @@ void Camera::setup()
 {
     // Get window size. It may start out different from the requested
     // size, and will change if the user resizes the window.
-    glfwGetWindowSize( &screensize.x, &screensize.y );
+    ivec2 screensize = glen::Engine::instance()->getWindowSize();
     if(screensize.y<=0) screensize.y=1; // Safeguard against iconified/closed window
 
     // Set viewport. This is the pixel rectangle we want to draw into.

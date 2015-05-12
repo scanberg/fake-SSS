@@ -29,6 +29,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "Log.h"
 #include "Framebuffer2D.h"
 #include "Spotlight.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -58,7 +60,8 @@ void loadTexture(const char *filename, GLuint texID, int flags=0);
 
 void drawScene();
 void calcFPS();
-void GLFWCALL keyCallback(int key, int action);
+//void GLFWCALL keyCallback(int key, int action);
+void handleInput();
 
 Geometry head;
 Geometry plane;
@@ -71,9 +74,11 @@ float g_rain;
 
 bool g_showSpec;
 
+glen::Engine *engine;
+
 int main()
 {
-    glen::Engine *engine = new glen::Engine();
+    engine = new glen::Engine();
 
     if(!engine->init(WINDOW_WIDTH,WINDOW_HEIGHT))
     {
@@ -81,7 +86,7 @@ int main()
         return 0;
     }
 
-    glfwSetKeyCallback(keyCallback);
+    //glfwSetKeyCallback(keyCallback);
 
     g_exposure = 2.2;
     g_bloom = 0.3;
@@ -94,12 +99,10 @@ int main()
     int uniformLoc;
     //int textureLoc;
 
-    GLuint testTexture = 0;
     GLuint colorMap = 0;
     GLuint normalMap = 0;
     GLuint specularMap = 0;
 
-    glGenTextures(1, &testTexture);
     glGenTextures(1, &colorMap);
     glGenTextures(1, &normalMap);
     glGenTextures(1, &specularMap);
@@ -121,14 +124,14 @@ int main()
     lights[0]->setLookAt(vec3(0,0.3,0));
     lights[0]->setColor(vec3(1.0,1.0,1.0));
     lights[0]->setLumen(2);
-    lights[0]->setOuterAngle(35.0);
+    lights[0]->setOuterAngle(glm::radians(35.0));
 
     lights.push_back(new Spotlight());
     lights[1]->setPosition(vec3(0.0,0.4,1.5));
     lights[1]->setLookAt(vec3(0,0.3,0));
     lights[1]->setColor(vec3(1.0,1.0,1.0));
     lights[1]->setLumen(3);
-    lights[1]->setOuterAngle(35.0);
+    lights[1]->setOuterAngle(glm::radians(35.0));
 
     Camera cam;
     vec3 lookPos(0,0.3,0);
@@ -187,18 +190,19 @@ int main()
 
     fsquad.createStaticBuffers();
 
-    loadTexture("resources/textures/texture.tga", testTexture);
-    loadTexture("resources/textures/head.tga", colorMap);
-    loadTexture("resources/textures/head_n.tga", normalMap);
-    loadTexture("resources/textures/head_d.tga", specularMap); 
+    loadTexture("resources/textures/head.jpg", colorMap);
+    loadTexture("resources/textures/head_n.jpg", normalMap);
+    loadTexture("resources/textures/head_d.jpg", specularMap); 
 
     glClearColor(0.0,0.0,0.0,0.0);
     glClearDepth(1.0);
     glCullFace(GL_BACK);
     glDepthFunc(GL_LESS);
 
-    while(true)
+    while(!engine->windowClosed())
     {
+        engine->update();
+        handleInput();
         calcFPS();
         modifyModel(modelMatrix);
 		//modelMatrix = glm::rotate(mat4(), 30.0f, vec3(0.0, 1.0, 0.0));
@@ -390,16 +394,11 @@ int main()
 		fsquad.draw();
 
         engine->swapBuffers();
-        if(!glfwGetWindowParam(GLFW_OPENED) || glfwGetKey(GLFW_KEY_ESC))
-			break;
     }
 
     for(size_t i=0; i<lights.size(); i++)
-    {
-        delete lights[i];                        
-    }
+        delete lights[i];        
 
-    glDeleteTextures(1, &testTexture);
     glDeleteTextures(1, &colorMap);
     glDeleteTextures(1, &normalMap);
     glDeleteTextures(1, &specularMap);
@@ -415,23 +414,26 @@ void modifyCamera(Camera *cam)
     static int oldMouseX=320, oldMouseY=240, oldMouseZ=1;
     static vec2 rotAngle = vec2(PI,0.5*PI);
     static float dist;
-    int mouseX, mouseY, mouseZ;
+    //int mouseX, mouseY, mouseZ;
 
-    glfwGetMousePos(&mouseX, &mouseY);
-    mouseZ = glfwGetMouseWheel();
+    //glfwGetMousePos(&mouseX, &mouseY);
+    //mouseZ = glfwGetMouseWheel();
 
-    vec2 mouseMove((float)(mouseX-oldMouseX), (float)(mouseY-oldMouseY));
-    dist += (float)(mouseZ-oldMouseZ) * 0.1f;
+    //vec2 mouseMove((float)(mouseX-oldMouseX), (float)(mouseY-oldMouseY));
+    //dist += (float)(mouseZ-oldMouseZ) * 0.1f;
+    vec2 mouseMove = engine->mouseVel();
+    dist -= engine->mouseScroll().y;
 
-    oldMouseX = mouseX; oldMouseY = mouseY; oldMouseZ = mouseZ;
+    //oldMouseX = mouseX; oldMouseY = mouseY; oldMouseZ = mouseZ;
 
-    if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT))
+    //if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT))
+    if(engine->mouseDown(0))
         rotAngle += mouseMove * 0.02f;
 
     rotAngle.y = glm::clamp(rotAngle.y, 0.02f, PI * 0.98f);
     dist = glm::clamp(dist, 0.6f, 10.0f);
 
-    float theta = -rotAngle.y;
+    float theta = rotAngle.y;
     float phi = -rotAngle.x;
 
     cam->setPosition(dist*glm::sin(theta)*glm::sin(phi), dist*glm::cos(theta), dist*glm::sin(theta)*glm::cos(phi));
@@ -448,12 +450,16 @@ void drawScene()
  * and set up the corresponding texture object.     //STEGU
  */
 void loadTexture(const char *filename, GLuint texID, int flags) {
-  
-    GLFWimage img; // Use intermediate GLFWimage to get width and height
+
+    stbi_set_flip_vertically_on_load(1);
+    //GLFWimage img; // Use intermediate GLFWimage to get width and height
 
     logNote("Attempting to load texture %s", filename);
 
-    if(!glfwReadImage(filename, &img, GLFW_NO_RESCALE_BIT))
+    int w, h, n;
+    unsigned char* data = stbi_load(filename, &w, &h, &n, 0);
+
+    if(!data)
     {
         logError("texture-image could not be read");
         return;
@@ -461,60 +467,57 @@ void loadTexture(const char *filename, GLuint texID, int flags) {
 
     glBindTexture( GL_TEXTURE_2D, texID );
 
-    if(!glfwLoadTextureImage2D( &img, flags ))
+    /*if(!glfwLoadTextureImage2D( &img, flags ))
     {
         logError("texture could not be loaded");
         glBindTexture( GL_TEXTURE_2D, 0 );
         return;
-    }
+    }*/
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, data);
 
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    glfwFreeImage(&img); // Clean up the malloc()'ed data pointer
+    //glfwFreeImage(&img); // Clean up the malloc()'ed data pointer
 
     glBindTexture( GL_TEXTURE_2D, 0 );
+
+    stbi_image_free(data);
 }
 
-void GLFWCALL keyCallback(int key, int action)
+void handleInput()
 {
-    if(key == 'W' && action == GLFW_PRESS)
-    {
+    glen::Engine* e = glen::Engine::instance();
+
+    if (e->keyHit(GLFW_KEY_W))
         g_exposure = glm::clamp(g_exposure + EXPOSURE_INC, EXPOSURE_MIN, EXPOSURE_MAX);
-    }
-    else if(key == 'S' && action == GLFW_PRESS)
-    {
+    
+    else if (e->keyHit(GLFW_KEY_S))
         g_exposure = glm::clamp(g_exposure - EXPOSURE_INC, EXPOSURE_MIN, EXPOSURE_MAX);
-    }
-    else if (key == 'E' && action == GLFW_PRESS)
-    {
+
+    else if (e->keyHit(GLFW_KEY_E))
         g_bloom = glm::clamp(g_bloom + BLOOM_INC, BLOOM_MIN, BLOOM_MAX);
-    }
-    else if(key == 'D' && action == GLFW_PRESS)
-    {
+
+    else if (e->keyHit(GLFW_KEY_D))
         g_bloom = glm::clamp(g_bloom - BLOOM_INC, BLOOM_MIN, BLOOM_MAX);
-    }
-    else if (key == 'R' && action == GLFW_PRESS)
-    {
+
+    else if (e->keyHit(GLFW_KEY_R))
         g_density = glm::clamp(g_density + DENSITY_INC, DENSITY_MIN, DENSITY_MAX);
-    }
-    else if(key == 'F' && action == GLFW_PRESS)
-    {
+
+    else if (e->keyHit(GLFW_KEY_F))
         g_density = glm::clamp(g_density - DENSITY_INC, DENSITY_MIN, DENSITY_MAX);
-    }
-    else if (key == 'T' && action == GLFW_PRESS)
-    {
+
+    else if (e->keyHit(GLFW_KEY_T))
         g_rain = glm::clamp(g_rain + RAIN_INC, RAIN_MIN, RAIN_MAX);
-    }
-    else if(key == 'G' && action == GLFW_PRESS)
-    {
+
+    else if (e->keyHit(GLFW_KEY_G))
         g_rain = glm::clamp(g_rain - RAIN_INC, RAIN_MIN, RAIN_MAX);
-    }
-    else if(key == '1' && action == GLFW_PRESS)
-    {
+
+    else if (e->keyHit(GLFW_KEY_1))
         g_showSpec = !g_showSpec;
-    }
 }
 
 void calcFPS()
@@ -532,7 +535,7 @@ void calcFPS()
         t0 = t;
 
         sprintf(title, "Fake-SSS FPS: %3.1f, Exposure(W/S): %2.1f, Bloom(E/D) %1.1f, Density(R/F) %1.2f, Rain(T/G) %1.1f", fps, g_exposure, g_bloom, g_density, g_rain);
-        glfwSetWindowTitle(title);
+        engine->setWindowTitle(title);
     }
     frameCount++;
 }

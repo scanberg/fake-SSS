@@ -1,5 +1,5 @@
 OS = $(shell uname -s)
-CC = g++
+CC = clang++
 MV = mv
 CP = cp
 RM = rm
@@ -18,13 +18,13 @@ ifdef OPENGL
 	MESSAGE += OpenGL,
 	ifeq ($(OS),Linux)
 		MESSAGE += for linux
-		FLAGS += -lglfw -lGLEW
+		FLAGS += -lglfw3 -lGLEW
 	else ifeq ($(OS),Darwin)
 		MESSAGE += for darwin
-		FLAGS += -framework Cocoa -framework OpenGL -lGLEW -lglfw
+		FLAGS += -framework Cocoa -framework OpenGL -lGLEW -lglfw3
 	else
 		MESSAGE += for other(win32!)
-		FLAGS += -lglfw -lopengl32 -lglew32
+		FLAGS += -lglfw3 -lopengl32 -lglew32
 	endif
 endif
 
