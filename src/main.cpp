@@ -107,14 +107,14 @@ int main()
     Framebuffer2D fboFront(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFront.attachBuffer(FBO_DEPTH, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT);   // Front-Depth
     fboFront.attachBuffer(FBO_AUX0, GL_RGBA8, GL_RGBA, GL_FLOAT);                           // Front-Albedo + Subsurface structure
-    fboFront.attachBuffer(FBO_AUX1, GL_RGB16F, GL_RGB, GL_FLOAT);                           // Front-XY-Normal + PackedSpecular (exponent + base)
-    fboFront.attachBuffer(FBO_AUX2, GL_RGB16F, GL_RGB, GL_FLOAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
+    fboFront.attachBuffer(FBO_AUX1, GL_RGBA16F, GL_RGBA, GL_FLOAT);                           // Front-XY-Normal + PackedSpecular (exponent + base)
+    fboFront.attachBuffer(FBO_AUX2, GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
         GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_TRUE);                                       // Blurred version of final
 
     //Framebuffer2D fboBlur(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     Framebuffer2D fboFinal(WINDOW_WIDTH, WINDOW_HEIGHT);
-    fboFinal.attachBuffer(FBO_AUX0, GL_RGB16F, GL_RGB, GL_FLOAT);                           // Final radiance
+    fboFinal.attachBuffer(FBO_AUX0, GL_RGBA16F, GL_RGBA, GL_FLOAT);                           // Final radiance
 
     lights.push_back(new Spotlight());
     lights[0]->setPosition(vec3(0.1,0.4,-1.5));
