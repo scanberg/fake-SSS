@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "ObjLoader.h"
 
-#define toFloat(x) atof(x.c_str())
+#define toFloat(x) (float)atof(x.c_str())
 #define toInt(x) atoi(x.c_str())
 
 #define hasVertex tempVertex.size() > 0
@@ -99,7 +99,7 @@ public:
 
     bool isUnique(int v, int n, int t, int &index)
     {
-        if(v >= uniqueVertex.size())
+        if(v >= (int)uniqueVertex.size())
         {
             //printf("v is more than size \n");
 
@@ -250,7 +250,7 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
         {
             ivec4 vdata(-1), tdata(-1), ndata(-1), fdata(-1);
 
-            for(int i=0; i<token.size()-1; ++i)
+            for(int i=0; i<(int)token.size()-1; ++i)
             {
                 param = token.getToken();
                 getIndices(param, vdata[i], tdata[i], ndata[i],
@@ -270,24 +270,24 @@ bool loadObj( std::vector<Geometry> &geomList, const std::string &filename, floa
 
                     Geometry::sVertex tv;
 
-                    assert( remappedV < tempVertex.size() );
+                    assert( remappedV < (int)tempVertex.size() );
                     tv.position = tempVertex[ remappedV ];
 
                     if(remappedT > -1)
                     {
-                        assert( remappedT < tempTexCoord.size() );
+                        assert( remappedT < (int)tempTexCoord.size() );
                         tv.texCoord = tempTexCoord[ remappedT ];
                     }
                     if(remappedN > -1)
                     {
-                        assert( remappedN < tempNormal.size() );
+                        assert( remappedN < (int)tempNormal.size() );
                         tv.normal = tempNormal[ remappedN ];
                     }
 
                     g.addVertex(tv);
                 }
 
-                assert(index < g.getVertexSize());
+                assert(index < (int)g.getVertexSize());
                 fdata[i] = index;
 
                 // if(tempSG > (int)vertexUsed[vdata[i]].size()-1)

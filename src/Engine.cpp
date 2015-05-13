@@ -38,6 +38,11 @@ namespace glen
 	{
 		inst = this;
 		currentShader = NULL;
+		dt = 0.f;
+
+		for (int i = 0; i < 8; ++i)
+			mouseButtonDown[i] = false;
+
 	}
 
 	Engine::~Engine()
@@ -53,7 +58,7 @@ namespace glen
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
 		//int fs = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
 
@@ -120,6 +125,12 @@ namespace glen
 
         // Read input and handle events
         glfwPollEvents();
+
+		static double t0 = 0.0;
+
+		double t = glfwGetTime();
+		dt = (float)(t - t0);
+		t0 = t;
 	}
 
 	void Engine::render()

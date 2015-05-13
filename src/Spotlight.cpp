@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #define DEG_TO_RAD PI / 180.0
 #define RAD_TO_DEG 180.0 / PI
-#define DEPTHMAP_RESOLUTION 1024
+#define DEPTHMAP_RESOLUTION 4096
 
 static const mat4 biasMatrix(	0.5, 0.0, 0.0, 0.0,
 								0.0, 0.5, 0.0, 0.0,
@@ -35,8 +35,8 @@ Spotlight::Spotlight()
 	width = height = DEPTHMAP_RESOLUTION;
 	near = 0.1f;
 	far = 5.0f;
-	position = 	vec4(0,0,0,glm::radians(45));
-	direction = vec4(0,0,-1,glm::radians(40));
+	position = 	vec4(0,0,0,glm::radians(45.f));
+	direction = vec4(0,0,-1,glm::radians(40.f));
 	color = 	vec4(1,1,1,100);
 
 	depthFbo = new Framebuffer2D(width, height);

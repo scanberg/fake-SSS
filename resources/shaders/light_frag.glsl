@@ -18,7 +18,7 @@ uniform vec2 spotlightNearFar = vec2(0.1,5.0);
 
 uniform vec3 camPos;
 uniform vec2 camRange = vec2(0.1,100.0);
-uniform float camRatio = 1024.0/768.0;
+uniform float camRatio = 1280.0/720.0;
 uniform float camFov = 60.0;
 
 uniform float density = 100.0;
@@ -74,7 +74,7 @@ void main(void)
 	viewSpaceNormal.z = sqrt(1.0 - dot(viewSpaceNormal.xy, viewSpaceNormal.xy));
 	viewSpaceNormal = normalize(viewSpaceNormal);
 
-	vec3 lightDirViewSpace = LightDirViewSpace;
+	vec3 lightDirViewSpace = normalize(LightDirViewSpace);
 
 	//vec4 shadowCoord = textureMatrix * vec4(worldCoord, 1.0);
 
@@ -119,18 +119,26 @@ void main(void)
 	float lightDepth = linearizeDepth(textureDepth, spotlightNearFar);
 	float fragDepthFromLight = linearizeDepth(coord.z, spotlightNearFar);
 
-	float deltaDepth = max(0.001, fragDepthFromLight - lightDepth);
+	float deltaDepth = max(0.01, fragDepthFromLight - lightDepth);
+
+	const vec3 sigma_t = vec3(100,300,300);
+
+	vec3 LightDirWorld = normalize(spotlightPos.xyz - worldCoord);
+	vec3 ViewDirWorld = normalize(camPos.xyz - worldCoord);
+
+	vec3 backFaceContrib = lightLumen * spotlightColor.xyz / (lightDepth * lightDepth);
+	vec3 subSurfaceContrib = exp(-deltaDepth * sigma_t) * max(0.0, -cosTerm) * backFaceContrib;
 
 	// Map density to a sigma term
-	float sigma = pow(density*10.0,3.0);
-	float scatterTerm = deltaDepth * 1500 * exp((-deltaDepth) * sigma);
+	//float sigma = pow(density*10.0,3.0);
+	//float scatterTerm = deltaDepth * 1500 * exp((-deltaDepth) * sigma);
 
 	// Should be a uniform based on material type
-	vec3 insideColor = vec3(1.0,0.0,0.0);
+	//vec3 insideColor = vec3(1.0,0.0,0.0);
 
 	// spotLightContrib that is used here is for the front fragment and therefore a cheat,
 	// a new contribution should be calculated from the 'back' fragment as seen from the light.
-	vec3 subSurfaceContrib = scatterTerm * insideColor * spotLightContrib  * max(0.0, -cosTerm);
+	//vec3 subSurfaceContrib = scatterTerm * insideColor * spotLightContrib  * max(0.0, -cosTerm);
 
 	vec3 surfaceContrib = vec3(0.0);
 	vec3 specularContrib = vec3(0.0);
@@ -152,8 +160,9 @@ void main(void)
 	const float backLightNoiseWeight = 0.90;
 	const float frontLightNoiseWeight = 0.27;
 
-	out_frag0 += (backLightNoiseWeight * albedoAndNoise.a + ( 1.0 - backLightNoiseWeight ) ) * subSurfaceContrib;
+	//out_frag0 += (backLightNoiseWeight * albedoAndNoise.a + ( 1.0 - backLightNoiseWeight ) ) * subSurfaceContrib;
 	out_frag0 += (frontLightNoiseWeight * albedoAndNoise.a +  ( 1.0 - frontLightNoiseWeight ) ) * surfaceContrib;
 	out_frag0 *= albedoAndNoise.rgb;
 	out_frag0 += specularContrib;
+	out_frag0 += subSurfaceContrib * (1.0 - albedoAndNoise.a*backLightNoiseWeight);
 }

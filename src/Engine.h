@@ -53,13 +53,15 @@ namespace glen
         Shader *getCurrentShader() { return currentShader; }
         ivec2 getWindowSize() { return windowSize; }
 
-        bool windowClosed() const { return glfwWindowShouldClose(window); }
+        bool windowClosed() const { return glfwWindowShouldClose(window) == 1; }
 
         bool keyDown(int key) const { return keyDownState[key]; }
         bool keyHit(int key) const { return keyHitState[key]; }
         bool mouseDown(int btn) const { return mouseButtonDown[btn]; }
         vec2 mouseVel() const { return mouseCursorVel; }
         vec2 mouseScroll() const { return mouseScrollVel; }
+
+		float deltaTime() const { return dt; }
 
         // Static functions
         static Engine *instance() { return inst; }
@@ -83,6 +85,8 @@ namespace glen
 
         u32 fbo;
         u32 colorMap, normalMap, depthMap;
+
+		float dt;
     };
 }
 

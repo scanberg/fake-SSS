@@ -33,8 +33,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 class Camera
 {
 private:
+	ivec2 screensize;
     vec2 nearfar;
-    ivec2 screensize;
     f32 fov;
 
     vec3 position;
@@ -49,7 +49,9 @@ private:
 public:
     void setup();
     void draw();
-    Camera() : nearfar(vec2(0.1f,100.0f)), screensize(ivec2(1024,768)), fov(glm::radians(60.0f)), lookat(NULL) {}
+    Camera(const ivec2& wh = ivec2(1280, 720), const vec2& nf = vec2(0.1f, 100.f), float f = glm::radians(60.f)) :
+		screensize(wh), nearfar(nf), fov(f), lookat(NULL) {}
+
     void setPosition(const vec3 &pos) { position = pos; }
     void setPosition(f32 x, f32 y, f32 z) { position = vec3(x,y,z);}
     void setOrientation(const vec3 &ori) { orientation = ori; }
@@ -59,15 +61,16 @@ public:
     void move(const vec3 &vec);
     void translate(const vec3 &vec) { position+=vec; }
 
-    const vec3 &getPosition() { return position; }
-    const vec3 &getOrientation() { return orientation; }
+    const vec3 &getPosition() const { return position; }
+    const vec3 &getOrientation() const { return orientation; }
 
-    float getFov() { return fov; }
+    float getFov() const { return fov; }
+	float getRatio() const { return (float)screensize.x / (float)screensize.y; }
 
-    const mat4 &getProjMatrix() { return projMat; }
-    const mat4 &getViewMatrix() { return viewMat; }
-    const mat4 &getInverseViewMatrix() { return invViewMat; }
-    const mat4 &getInverseProjMatrix() { return invProjMat; }
+    const mat4 &getProjMatrix() const { return projMat; }
+    const mat4 &getViewMatrix() const { return viewMat; }
+    const mat4 &getInverseViewMatrix() const { return invViewMat; }
+    const mat4 &getInverseProjMatrix() const { return invProjMat; }
 };
 
 #endif

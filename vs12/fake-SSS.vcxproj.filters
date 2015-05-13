@@ -78,4 +78,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\resources\shaders\light_frag.glsl" />
+    <None Include="..\resources\shaders\front_frag.glsl" />
+    <None Include="..\resources\shaders\depth_frag.glsl" />
+  </ItemGroup>
 </Project>

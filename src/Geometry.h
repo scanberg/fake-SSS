@@ -65,7 +65,7 @@ public:
 
     bool createStaticBuffers(GLint posLoc=0, GLint normLoc=1, GLint tangLoc=2, GLint texLoc=3);
     bool createDynamicBuffers();
-    inline bool existOnGpu() { return (bool)glIsVertexArray(vao); }
+    inline bool existOnGpu() { return glIsVertexArray(vao) == GL_TRUE; }
     bool updateBuffers();
 
     void destroyBuffers();

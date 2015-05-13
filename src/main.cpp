@@ -32,27 +32,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 768
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
 #define NUM_HDR_BLUR_PASSES 2
 
-#define EXPOSURE_MIN 0.1
-#define EXPOSURE_MAX 10.0
-#define EXPOSURE_INC 0.1
+#define EXPOSURE_MIN 0.1f
+#define EXPOSURE_MAX 10.0f
+#define EXPOSURE_INC 0.1f
 
-#define BLOOM_MIN 0.1
-#define BLOOM_MAX 1.0
-#define BLOOM_INC 0.1
+#define BLOOM_MIN 0.1f
+#define BLOOM_MAX 1.0f
+#define BLOOM_INC 0.1f
 
-#define DENSITY_MIN 0.5
-#define DENSITY_MAX 3.0
-#define DENSITY_INC 0.1
+#define DENSITY_MIN 0.5f
+#define DENSITY_MAX 3.0f
+#define DENSITY_INC 0.1f
 
-#define RAIN_MIN 0.0
-#define RAIN_MAX 1.0
-#define RAIN_INC 0.1
+#define RAIN_MIN 0.0f
+#define RAIN_MAX 1.0f
+#define RAIN_INC 0.1f
 
-#define ROTATION_SPEED 0.01
+#define ROTATION_SPEED 0.1f
 
 void modifyModel(mat4 &m);
 void modifyCamera(Camera *cam);
@@ -60,7 +60,6 @@ void loadTexture(const char *filename, GLuint texID, int flags=0);
 
 void drawScene();
 void calcFPS();
-//void GLFWCALL keyCallback(int key, int action);
 void handleInput();
 
 Geometry head;
@@ -86,18 +85,15 @@ int main()
         return 0;
     }
 
-    //glfwSetKeyCallback(keyCallback);
-
-    g_exposure = 2.2;
-    g_bloom = 0.3;
-    g_density = 1.2;
-    g_rain = 0.5;
+    g_exposure = 2.2f;
+    g_bloom = 0.4f;
+    g_density = 1.2f;
+    g_rain = 0.5f;
     g_showSpec = false;
 
     int timeLoc;
     int textureMatrixLoc;
     int uniformLoc;
-    //int textureLoc;
 
     GLuint colorMap = 0;
     GLuint normalMap = 0;
@@ -119,21 +115,23 @@ int main()
     Framebuffer2D fboFinal(WINDOW_WIDTH, WINDOW_HEIGHT);
     fboFinal.attachBuffer(FBO_AUX0, GL_RGBA16F, GL_RGBA, GL_FLOAT);                           // Final radiance
 
-    lights.push_back(new Spotlight());
-    lights[0]->setPosition(vec3(0.1,0.4,-1.5));
-    lights[0]->setLookAt(vec3(0,0.3,0));
-    lights[0]->setColor(vec3(1.0,1.0,1.0));
-    lights[0]->setLumen(2);
-    lights[0]->setOuterAngle(glm::radians(35.0));
-
-    lights.push_back(new Spotlight());
-    lights[1]->setPosition(vec3(0.0,0.4,1.5));
-    lights[1]->setLookAt(vec3(0,0.3,0));
-    lights[1]->setColor(vec3(1.0,1.0,1.0));
-    lights[1]->setLumen(3);
-    lights[1]->setOuterAngle(glm::radians(35.0));
-
-    Camera cam;
+	Spotlight* l0 = new Spotlight();
+    lights.push_back(l0);
+	l0->setPosition(vec3(0.1, 0.4, -1.5));
+	l0->setLookAt(vec3(0, 0.3, 0));
+	l0->setColor(vec3(1.0, 1.0, 1.0));
+	l0->setLumen(2);
+	l0->setOuterAngle(glm::radians(40.0f));
+	
+	Spotlight* l1 = new Spotlight();
+    lights.push_back(l1);
+    l1->setPosition(vec3(0.0,0.4,1.5));
+	l1->setLookAt(vec3(0, 0.3, 0));
+	l1->setColor(vec3(1.0, 1.0, 1.0));
+	l1->setLumen(3);
+	l1->setOuterAngle(glm::radians(40.0f));
+	
+	Camera cam(ivec2(WINDOW_WIDTH, WINDOW_HEIGHT), vec2(0.1f, 100.f));
     vec3 lookPos(0,0.3,0);
     cam.setPosition(0,10,10);
     cam.lookAt(&lookPos);
@@ -321,6 +319,10 @@ int main()
 		if(uniformLoc > -1)
 			glUniform1f(uniformLoc, g_density);
 
+		uniformLoc = lightShader.getUniformLocation("camRatio");
+		if (uniformLoc > -1)
+			glUniform1f(uniformLoc, cam.getRatio());
+
 		glActiveTexture(GL_TEXTURE3);
 
 		for(size_t i=0; i<lights.size(); ++i)
@@ -411,24 +413,14 @@ int main()
 
 void modifyCamera(Camera *cam)
 {
-    static int oldMouseX=320, oldMouseY=240, oldMouseZ=1;
     static vec2 rotAngle = vec2(PI,0.5*PI);
     static float dist;
-    //int mouseX, mouseY, mouseZ;
 
-    //glfwGetMousePos(&mouseX, &mouseY);
-    //mouseZ = glfwGetMouseWheel();
-
-    //vec2 mouseMove((float)(mouseX-oldMouseX), (float)(mouseY-oldMouseY));
-    //dist += (float)(mouseZ-oldMouseZ) * 0.1f;
     vec2 mouseMove = engine->mouseVel();
-    dist -= engine->mouseScroll().y;
+    dist -= engine->mouseScroll().y * 10.f * engine->deltaTime();
 
-    //oldMouseX = mouseX; oldMouseY = mouseY; oldMouseZ = mouseZ;
-
-    //if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT))
-    if(engine->mouseDown(0))
-        rotAngle += mouseMove * 0.02f;
+    if(engine->mouseDown(GLFW_MOUSE_BUTTON_1))
+        rotAngle += mouseMove * 0.3f * engine->deltaTime();
 
     rotAngle.y = glm::clamp(rotAngle.y, 0.02f, PI * 0.98f);
     dist = glm::clamp(dist, 0.6f, 10.0f);
@@ -445,19 +437,14 @@ void drawScene()
     //plane.draw();
 }
 
-/*
- * loadTexture - load 8-bit texture data from a TGA file
- * and set up the corresponding texture object.     //STEGU
- */
 void loadTexture(const char *filename, GLuint texID, int flags) {
 
     stbi_set_flip_vertically_on_load(1);
-    //GLFWimage img; // Use intermediate GLFWimage to get width and height
 
     logNote("Attempting to load texture %s", filename);
 
     int w, h, n;
-    unsigned char* data = stbi_load(filename, &w, &h, &n, 0);
+    unsigned char* data = stbi_load(filename, &w, &h, &n, 3);
 
     if(!data)
     {
@@ -467,13 +454,6 @@ void loadTexture(const char *filename, GLuint texID, int flags) {
 
     glBindTexture( GL_TEXTURE_2D, texID );
 
-    /*if(!glfwLoadTextureImage2D( &img, flags ))
-    {
-        logError("texture could not be loaded");
-        glBindTexture( GL_TEXTURE_2D, 0 );
-        return;
-    }*/
-
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0,
         GL_RGB, GL_UNSIGNED_BYTE, data);
 
@@ -481,7 +461,6 @@ void loadTexture(const char *filename, GLuint texID, int flags) {
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    //glfwFreeImage(&img); // Clean up the malloc()'ed data pointer
 
     glBindTexture( GL_TEXTURE_2D, 0 );
 
@@ -542,8 +521,9 @@ void calcFPS()
 
 void modifyModel( mat4 &m )
 {
-    static float angle = 0.0;
-    angle += ROTATION_SPEED;
+	glen::Engine* e = glen::Engine::instance();
+    static float angle = glm::radians(35.f);
+	angle += ROTATION_SPEED * e->deltaTime();
 
     m = glm::rotate(mat4(), angle, vec3(0.0,1.0,0.0));
 }

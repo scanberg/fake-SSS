@@ -344,7 +344,7 @@ void main(void)
 
   //vec3 worldNormal = normalize(WorldNormal);
 
-  float specBase = 0.2 + waterHeight * 0.8;
+  float specBase = clamp(0.2 + 0.8*pow(waterHeight, 1.0/2.0), 0.0, 1.0);
   float specularExp = 50.0 + waterHeight*50.0;
 
   //colorMap *= 1.0 - 0.2 * smoothstep(0.1, 0.3, waterHeight);
